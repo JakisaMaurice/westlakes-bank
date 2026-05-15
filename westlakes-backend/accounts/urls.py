@@ -1,0 +1,13 @@
+from django.urls import path
+from . import views
+
+app_name = 'accounts'
+
+urlpatterns = [
+    path('', views.BankAccountListCreateView.as_view(), name='account-list-create'),
+    path('<int:pk>/', views.BankAccountDetailView.as_view(), name='account-detail'),
+    path('<int:account_id>/approve/', views.approve_account, name='approve-account'),
+    path('<int:account_id>/reject/', views.reject_account, name='reject-account'),
+    path('<int:account_id>/suspend/', views.suspend_account, name='suspend-account'),
+    path('<int:account_id>/activate/', views.activate_account, name='activate-account'),
+]
