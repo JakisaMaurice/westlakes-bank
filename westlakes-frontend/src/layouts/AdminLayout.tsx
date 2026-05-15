@@ -1,15 +1,23 @@
-import { NavLink, Outlet } from "react-router-dom"
+import { NavLink, Outlet, useNavigate } from "react-router-dom"
+import { useAuth } from "@/lib/auth"
 
 const adminNav = [
-  { label: "Admin Dashboard", to: "dashboard" },
-  { label: "Customer Management", to: "customer-management" },
-  { label: "Account Approvals", to: "account-approvals" },
-  { label: "Transaction Monitoring", to: "transaction-monitoring" },
-  { label: "Ticket Management", to: "ticket-management" },
-  { label: "Reports", to: "reports" },
+  { label: "Admin Dashboard", to: "" },
+  { label: "Customer Management", to: "customers" },
+  { label: "Account Approvals", to: "approvals" },
+  { label: "Transaction Monitoring", to: "transactions" },
+  { label: "Ticket Management", to: "tickets" },
 ]
 
 export default function AdminLayout() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  function handleSignOut() {
+    logout()
+    navigate("/login")
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="border-b border-slate-200 bg-white py-4 shadow-sm">
@@ -17,8 +25,14 @@ export default function AdminLayout() {
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">Admin Dashboard</p>
             <h1 className="text-2xl font-semibold text-slate-950">Westlakes Bank</h1>
+            {user ? (
+              <p className="text-sm text-slate-600">Signed in as {user.full_name}</p>
+            ) : null}
           </div>
-          <button className="rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200">
+          <button
+            onClick={handleSignOut}
+            className="rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200"
+          >
             Sign out
           </button>
         </div>

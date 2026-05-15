@@ -1,15 +1,69 @@
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Activity, Users, ShieldCheck, BarChart3 } from "lucide-react"
+import { api } from "@/lib/api"
 
-const stats = [
-  { label: "Pending approvals", value: "18", icon: ShieldCheck },
-  { label: "Active customers", value: "5,420", icon: Users },
-  { label: "Transactions today", value: "2,180", icon: Activity },
-  { label: "Reports due", value: "4", icon: BarChart3 },
+interface AnalyticsData {
+  accounts: {
+    total: number
+    active: number
+    pending: number
+  }
+  transactions: {
+    recent_count: number
+    recent_volume: number
+  }
+  customers: {
+    total: number
+    verified: number
+  }
+}
+
+const defaultStats = [
+  { label: "Pending approvals", value: "0", icon: ShieldCheck },
+  { label: "Active customers", value: "0", icon: Users },
+  { label: "Transactions last 30 days", value: "0", icon: Activity },
+  { label: "Verified customers", value: "0", icon: BarChart3 },
 ]
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState(defaultStats)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    void api
+      .get<AnalyticsData>("/api/admin/analytics/")
+      .then((response) => {
+        const data = response.data
+        setStats([
+          { label: "Pending approvals", value: String(data.accounts.pending), icon: ShieldCheck },
+          { label: "Active customers", value: String(data.customers.total), icon: Users },
+          { label: "Transactions last 30 days", value: String(data.transactions.recent_count), icon: Activity },
+          { label: "Verified customers", value: String(data.customers.verified), icon: BarChart3 },
+        ])
+      })
+      .catch(() => setError("Unable to load dashboard analytics."))
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        <p className="text-sm text-slate-600">Loading admin dashboard...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <p className="text-sm text-red-600">{error}</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-10">
       <div className="rounded-[2rem] bg-slate-950 p-8 text-white shadow-2xl shadow-slate-950/20">

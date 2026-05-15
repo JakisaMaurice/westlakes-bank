@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { ChevronDown, Menu, X } from "lucide-react"
 import {
@@ -8,6 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
+import { useAuth } from "@/lib/auth"
 
 const productLinks = [
   { label: "Personal Banking", href: "/services" },
@@ -26,7 +27,16 @@ const navLinks = [
 ]
 
 export default function Navbar() {
+  const { user, logout } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const navigate = useNavigate()
+
+  function handleSignOut() {
+    logout()
+    navigate("/login")
+  }
+
+  const dashboardPath = user?.role === "ADMIN" ? "/admin" : "/customer"
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/95 backdrop-blur-xl">
@@ -72,12 +82,28 @@ export default function Navbar() {
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/login">Login</Link>
-          </Button>
-          <Button size="sm" asChild>
-            <Link to="/register">Open Account</Link>
-          </Button>
+          {user ? (
+            <>
+              <span className="rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm text-slate-700">
+                {user.full_name}
+              </span>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to={dashboardPath}>Dashboard</Link>
+              </Button>
+              <Button size="sm" onClick={handleSignOut}>
+                Sign out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/login">Login</Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link to="/register">Open Account</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         <button
@@ -105,16 +131,31 @@ export default function Navbar() {
             ))}
           </div>
           <div className="mt-4 flex flex-col gap-3">
-            <Button variant="outline" size="default" asChild>
-              <Link to="/login" onClick={() => setMobileOpen(false)}>
-                Login
-              </Link>
-            </Button>
-            <Button size="default" asChild>
-              <Link to="/register" onClick={() => setMobileOpen(false)}>
-                Open Account
-              </Link>
-            </Button>
+            {user ? (
+              <>
+                <Button variant="outline" size="default" onClick={() => { handleSignOut(); setMobileOpen(false) }}>
+                  Sign out
+                </Button>
+                <Button size="default" asChild>
+                  <Link to={dashboardPath} onClick={() => setMobileOpen(false)}>
+                    Dashboard
+                  </Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" size="default" asChild>
+                  <Link to="/login" onClick={() => setMobileOpen(false)}>
+                    Login
+                  </Link>
+                </Button>
+                <Button size="default" asChild>
+                  <Link to="/register" onClick={() => setMobileOpen(false)}>
+                    Open Account
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}

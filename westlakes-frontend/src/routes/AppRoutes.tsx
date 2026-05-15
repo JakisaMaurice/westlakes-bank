@@ -44,6 +44,7 @@ function AppRoutes() {
         <Route element={<ProtectedRoutes role="customer" />}>
           <Route path="customer" element={<CustomerLayout />}>
             <Route index element={<CustomerDashboard />} />
+            <Route path="dashboard" element={<CustomerDashboard />} />
             <Route path="accounts" element={<CustomerAccounts />} />
             <Route path="transactions" element={<CustomerTransactions />} />
             <Route path="transfers" element={<CustomerTransfers />} />
@@ -56,6 +57,7 @@ function AppRoutes() {
         <Route element={<ProtectedRoutes role="admin" />}>
           <Route path="admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="customers" element={<CustomerManagement />} />
             <Route path="approvals" element={<AccountApprovals />} />
             <Route path="transactions" element={<TransactionMonitoring />} />

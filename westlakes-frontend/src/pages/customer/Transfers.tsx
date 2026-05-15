@@ -1,7 +1,39 @@
+import { useState, type FormEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { api } from "@/lib/api"
 
 export default function Transfers() {
+  const [receiverAccount, setReceiverAccount] = useState("")
+  const [amount, setAmount] = useState("")
+  const [description, setDescription] = useState("")
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
+  const [loading, setLoading] = useState(false)
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError("")
+    setSuccess("")
+    setLoading(true)
+
+    try {
+      await api.post("/api/transactions/transfer/", {
+        receiver_account_number: receiverAccount,
+        amount: Number(amount),
+        description,
+      })
+      setSuccess("Transfer submitted successfully.")
+      setReceiverAccount("")
+      setAmount("")
+      setDescription("")
+    } catch (err) {
+      setError("Could not send transfer. Check the account number and amount.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-10">
       <div>
@@ -14,27 +46,43 @@ export default function Transfers() {
 
       <div className="grid gap-8 lg:grid-cols-[0.9fr_0.7fr]">
         <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">From account</label>
-              <select className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-amber-300 focus:ring-2 focus:ring-amber-300/20">
-                <option>Everyday Current - **** 3482</option>
-                <option>Growth Savings - **** 8721</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">To account</label>
-              <Input type="text" placeholder="Beneficiary name or account" />
+              <label className="mb-2 block text-sm font-medium text-slate-700">Beneficiary account number</label>
+              <Input
+                type="text"
+                placeholder="1234567890"
+                value={receiverAccount}
+                onChange={(event) => setReceiverAccount(event.target.value)}
+                required
+              />
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Amount</label>
-              <Input type="text" placeholder="£0.00" />
+              <Input
+                type="number"
+                placeholder="0.00"
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
+                required
+                min={0}
+                step="0.01"
+              />
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Reference</label>
-              <Input type="text" placeholder="Payment reference" />
+              <Input
+                type="text"
+                placeholder="Payment reference"
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+              />
             </div>
-            <Button type="submit" className="rounded-full bg-slate-950 px-6 py-3 text-white hover:bg-slate-800">Send transfer</Button>
+            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            {success ? <p className="text-sm text-emerald-600">{success}</p> : null}
+            <Button type="submit" className="rounded-full bg-slate-950 px-6 py-3 text-white hover:bg-slate-800" disabled={loading}>
+              {loading ? "Sending transfer..." : "Send transfer"}
+            </Button>
           </form>
         </div>
 

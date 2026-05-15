@@ -1,13 +1,28 @@
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card"
+import { api } from "@/lib/api"
 
-const customers = [
-  { name: "Liam Carter", status: "Active", product: "Savings" },
-  { name: "Hannah Kim", status: "Pending", product: "Business" },
-  { name: "Noah Smith", status: "Active", product: "Current" },
-]
+interface Customer {
+  id: number
+  full_name: string
+  email: string
+  is_verified: boolean
+}
 
 export default function CustomerManagement() {
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    void api
+      .get<Customer[]>("/api/auth/customers/")
+      .then((response) => setCustomers(response.data))
+      .catch(() => setError("Unable to load customers."))
+      .finally(() => setLoading(false))
+  }, [])
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -18,17 +33,25 @@ export default function CustomerManagement() {
         <Button className="rounded-full bg-slate-950 px-6 py-3 text-white hover:bg-slate-800">Invite new customer</Button>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        {customers.map((customer) => (
-          <Card key={customer.name} className="rounded-[1.75rem] border-slate-200">
-            <CardContent className="space-y-4">
-              <CardTitle>{customer.name}</CardTitle>
-              <CardDescription>{customer.product}</CardDescription>
-              <div className="rounded-3xl bg-slate-50 px-4 py-3 text-sm text-slate-700">Status: {customer.status}</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {loading ? (
+        <p className="text-slate-600">Loading customers...</p>
+      ) : error ? (
+        <p className="text-red-600">{error}</p>
+      ) : (
+        <div className="grid gap-6 xl:grid-cols-3">
+          {customers.map((customer) => (
+            <Card key={customer.id} className="rounded-[1.75rem] border-slate-200">
+              <CardContent className="space-y-4">
+                <CardTitle>{customer.full_name}</CardTitle>
+                <CardDescription>{customer.email}</CardDescription>
+                <div className="rounded-3xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                  Status: {customer.is_verified ? "Verified" : "Pending"}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
         <p className="text-sm uppercase tracking-[0.28em] text-amber-500">Customer search</p>
