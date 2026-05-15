@@ -1,85 +1,52 @@
-import { useState, type FormEvent } from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { Link } from "react-router-dom"
+import { LockKeyhole } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { api } from "@/lib/api"
-import { useAuth } from "@/lib/auth"
 
 export default function Login() {
-  const { login } = useAuth()
-  const navigate = useNavigate()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setError("")
-    setLoading(true)
-
-    try {
-      const response = await api.post("/api/auth/login/", {
-        email,
-        password,
-      })
-
-      login(response.data.user, response.data.tokens.access, response.data.tokens.refresh)
-
-      if (response.data.user.role === "ADMIN") {
-        navigate("/admin", { replace: true })
-      } else {
-        navigate("/customer", { replace: true })
-      }
-    } catch (err) {
-      setError("Unable to sign in. Check your email and password.")
-    } finally {
-      setLoading(false)
-    }
-  }
-
   return (
-    <div className="mx-auto max-w-2xl space-y-10">
-      <section className="rounded-[2rem] bg-white p-10 shadow-sm shadow-slate-200/60">
-        <p className="text-sm uppercase tracking-[0.32em] text-amber-500">Secure access</p>
-        <h1 className="mt-4 text-4xl font-semibold text-slate-950 sm:text-5xl">Login to your Westlakes account.</h1>
-        <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-          Access your accounts, view transactions, and manage your banking from a secure dashboard.
-        </p>
-      </section>
+    <div className="bg-white">
+      <section className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:px-8">
+        <div className="flex flex-col justify-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#D4AF37]">Secure access</p>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[#0F172A] sm:text-6xl">Login to Westlakes Bank.</h1>
+          <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600">
+            This is a public website login screen only. No authentication request or dashboard routing is implemented here.
+          </p>
+        </div>
 
-      <section className="rounded-[2rem] border border-slate-200 bg-slate-50 p-10 shadow-sm">
-        <form className="grid gap-5" onSubmit={handleSubmit}>
-          <div>
-            <label className="mb-3 block text-sm font-medium text-slate-700">Email address</label>
-            <Input
-              type="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className="mb-3 block text-sm font-medium text-slate-700">Password</label>
-            <Input
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-            />
-          </div>
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Link to="/forgot-password" className="text-sm text-amber-600 hover:text-amber-500">
-              Forgot password?
-            </Link>
-            <Button type="submit" className="rounded-full px-6 py-3 bg-slate-950 text-white hover:bg-slate-800" disabled={loading}>
-              {loading ? "Signing in..." : "Sign in"}
-            </Button>
-          </div>
-        </form>
+        <div className="flex items-center">
+          <form className="w-full rounded-3xl border border-slate-200 bg-[#F8FAFC] p-6 shadow-xl shadow-slate-950/5 sm:p-8">
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#0A3D91] text-white">
+              <LockKeyhole className="size-5" />
+            </span>
+            <div className="mt-7 grid gap-4">
+              <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                Email address
+                <Input className="h-12 rounded-2xl bg-white" placeholder="name@example.com" type="email" />
+              </label>
+              <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                Password
+                <Input className="h-12 rounded-2xl bg-white" placeholder="Enter password" type="password" />
+              </label>
+            </div>
+            <div className="mt-5 flex items-center justify-between gap-4">
+              <Link to="/forgot-password" className="text-sm font-medium text-[#0A3D91] hover:text-[#1E5EFF]">
+                Forgot password?
+              </Link>
+              <Button type="submit" className="h-11 rounded-full bg-[#0A3D91] px-6 text-white hover:bg-[#1E5EFF]">
+                Login
+              </Button>
+            </div>
+            <p className="mt-6 text-sm text-slate-600">
+              New to Westlakes?{" "}
+              <Link to="/register" className="font-semibold text-[#0A3D91] hover:text-[#1E5EFF]">
+                Open an account
+              </Link>
+            </p>
+          </form>
+        </div>
       </section>
     </div>
   )

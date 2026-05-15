@@ -1,68 +1,69 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card"
 import SectionHeading from "@/components/shared/SectionHeading"
-import { ShieldCheck, Sparkles, Users } from "lucide-react"
-
-const roles = [
-  { title: "Relationship Manager", location: "London", description: "Support clients with premium banking solutions and account guidance." },
-  { title: "Digital Product Designer", location: "Remote", description: "Design intuitive banking experiences that feel modern and trustworthy." },
-  { title: "Compliance Analyst", location: "London", description: "Help maintain risk standards and ensure safe, compliant banking operations." },
-]
-
-const cultureItems = [
-  { title: "Collaborative teams", description: "Work alongside experienced professionals in a people-first culture.", icon: Users },
-  { title: "Growth mindset", description: "Access training and mentorship to build a long-term banking career.", icon: Sparkles },
-  { title: "Trusted service", description: "Deliver secure, transparent experiences that customers rely on.", icon: ShieldCheck },
-]
+import { careerRoles, companyValues } from "@/components/shared/siteData"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
 
 export default function Careers() {
   return (
-    <div className="space-y-14">
-      <section className="rounded-[2rem] bg-white p-10 shadow-sm shadow-slate-200/60">
-        <SectionHeading
-          eyebrow="Careers"
-          title="Be part of banking that makes customers feel secure and supported."
-          description="Build your career at Westlakes Bank, where innovation, service excellence, and people-first values shape every customer interaction."
-        />
-      </section>
-
-      <section className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-[2rem] border border-slate-200 bg-slate-50 p-8 shadow-sm">
-          <h2 className="text-2xl font-semibold text-slate-950">Our culture</h2>
-          <p className="mt-4 text-slate-600 leading-7">
-            We empower people who want to deliver modern banking with clarity, agility, and thoughtful customer care.
-          </p>
-          <div className="mt-8 space-y-4">
-            {cultureItems.map((item) => {
-              const Icon = item.icon
-              return (
-                <div key={item.title} className="rounded-3xl border border-slate-200 bg-white p-6">
-                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-amber-50 text-amber-600 shadow-sm">
-                    <Icon className="size-5" />
-                  </div>
-                  <h3 className="mt-4 text-lg font-semibold text-slate-950">{item.title}</h3>
-                  <p className="mt-2 text-slate-600 leading-7">{item.description}</p>
-                </div>
-              )
-            })}
+    <div>
+      <section className="bg-white">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:px-8 lg:py-20">
+          <SectionHeading
+            eyebrow="Careers"
+            title="Build banking experiences people can trust."
+            description="Join a team focused on secure financial products, thoughtful customer service, and modern digital craft."
+          />
+          <div className="rounded-3xl bg-[#061B3A] p-8 text-white">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#D4AF37]">Culture</p>
+            <p className="mt-5 text-3xl font-semibold leading-tight">
+              Calm, capable teams doing meaningful work for customers with real financial goals.
+            </p>
           </div>
         </div>
+      </section>
 
-        <div className="space-y-6">
-          {roles.map((role) => (
-            <Card key={role.title} className="rounded-[1.75rem] border-slate-200">
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between gap-4">
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <div className="grid gap-5 md:grid-cols-3">
+          {companyValues.slice(0, 3).map((item) => {
+            const Icon = item.icon
+            return (
+              <Card key={item.title} className="rounded-2xl border-slate-200 bg-white p-2 shadow-sm">
+                <CardContent className="p-5">
+                  <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#1E5EFF]/10 text-[#0A3D91]">
+                    <Icon className="size-5" />
+                  </span>
+                  <CardTitle className="mt-5 text-xl">{item.title}</CardTitle>
+                  <CardDescription className="mt-3 leading-7 text-slate-600">{item.description}</CardDescription>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      </section>
+
+      <section className="bg-white py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <SectionHeading
+            eyebrow="Open roles"
+            title="Current public-site career listings."
+            description="These roles are presented for the public website only. Application processing is not wired to a backend here."
+          />
+          <div className="mt-10 grid gap-5">
+            {careerRoles.map((role) => (
+              <Card key={role.title} className="rounded-2xl border-slate-200 bg-[#F8FAFC] p-2 shadow-sm">
+                <CardContent className="grid gap-5 p-5 lg:grid-cols-[1fr_auto] lg:items-center">
                   <div>
-                    <CardTitle>{role.title}</CardTitle>
-                    <p className="text-sm uppercase tracking-[0.24em] text-amber-500">{role.location}</p>
+                    <CardTitle className="text-2xl">{role.title}</CardTitle>
+                    <p className="mt-2 text-sm font-semibold uppercase tracking-[0.22em] text-[#D4AF37]">
+                      {role.location} · {role.type}
+                    </p>
+                    <CardDescription className="mt-4 max-w-3xl leading-7 text-slate-600">{role.description}</CardDescription>
                   </div>
-                </div>
-                <CardDescription>{role.description}</CardDescription>
-                <Button className="rounded-full bg-slate-950 px-5 py-3 text-white hover:bg-slate-800">Apply now</Button>
-              </CardContent>
-            </Card>
-          ))}
+                  <Button className="h-11 rounded-full bg-[#0A3D91] px-6 text-white hover:bg-[#1E5EFF]">Apply Now</Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </section>
     </div>

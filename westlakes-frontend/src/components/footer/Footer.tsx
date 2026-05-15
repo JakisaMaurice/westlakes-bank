@@ -1,51 +1,46 @@
 import { Link } from "react-router-dom"
+import { ArrowUpRight, Building2, Mail, MapPin, Phone } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
-import { Mail, Phone, MapPin } from "lucide-react"
-
-const quickLinks = [
-  { label: "Home", href: "/" },
-  { label: "About", href: "/about" },
-  { label: "Services", href: "/services" },
-  { label: "Careers", href: "/careers" },
-  { label: "FAQ", href: "/faq" },
-]
-
-const serviceLinks = [
-  { label: "Savings", href: "/services" },
-  { label: "Loans", href: "/services" },
-  { label: "Business Banking", href: "/services" },
-  { label: "Investments", href: "/services" },
-]
+import { brand, footerServiceLinks, navLinks } from "@/components/shared/siteData"
 
 export default function Footer() {
   return (
-    <footer className="border-t border-slate-200/70 bg-slate-950 text-slate-200">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:px-8 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
+    <footer className="bg-[#061B3A] text-white">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1.3fr_0.8fr_0.8fr_1fr] lg:px-8">
         <div>
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-amber-300">Westlakes Bank</p>
-          <p className="max-w-sm text-sm leading-7 text-slate-300">
-            Westlakes Bank powers premium banking with a modern, secure digital experience for customers and businesses across the region.
+          <Link to="/" className="flex items-center gap-3">
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-[#0A3D91]">
+              <Building2 className="size-5" />
+            </span>
+            <span>
+              <span className="block text-lg font-semibold">{brand.name}</span>
+              <span className="block text-xs uppercase tracking-[0.22em] text-blue-100">Private digital banking</span>
+            </span>
+          </Link>
+          <p className="mt-6 max-w-sm text-sm leading-7 text-blue-100">
+            Premium public banking experiences for people and companies who want clarity, security, and modern financial access.
           </p>
-          <div className="mt-6 space-y-3 text-sm text-slate-400">
-            <p className="flex items-center gap-2">
-              <MapPin className="size-4 text-amber-300" />
-              1200 Lakeshore Drive, Suite 500, London
+          <div className="mt-7 space-y-3 text-sm text-blue-100">
+            <p className="flex items-center gap-3">
+              <MapPin className="size-4 text-[#D4AF37]" />
+              {brand.address}
             </p>
-            <p className="flex items-center gap-2">
-              <Mail className="size-4 text-amber-300" />
-              support@westlakesbank.com
+            <p className="flex items-center gap-3">
+              <Mail className="size-4 text-[#D4AF37]" />
+              {brand.email}
             </p>
-            <p className="flex items-center gap-2">
-              <Phone className="size-4 text-amber-300" />
-              +44 20 7946 6800
+            <p className="flex items-center gap-3">
+              <Phone className="size-4 text-[#D4AF37]" />
+              {brand.phone}
             </p>
           </div>
         </div>
 
         <div>
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-slate-200">Quick links</p>
-          <div className="flex flex-col gap-3 text-sm text-slate-400">
-            {quickLinks.map((link) => (
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#D4AF37]">Company</p>
+          <div className="mt-5 flex flex-col gap-3 text-sm text-blue-100">
+            {navLinks.map((link) => (
               <Link key={link.label} to={link.href} className="transition hover:text-white">
                 {link.label}
               </Link>
@@ -54,9 +49,9 @@ export default function Footer() {
         </div>
 
         <div>
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-slate-200">Services</p>
-          <div className="flex flex-col gap-3 text-sm text-slate-400">
-            {serviceLinks.map((link) => (
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#D4AF37]">Services</p>
+          <div className="mt-5 flex flex-col gap-3 text-sm text-blue-100">
+            {footerServiceLinks.map((link) => (
               <Link key={link.label} to={link.href} className="transition hover:text-white">
                 {link.label}
               </Link>
@@ -64,29 +59,28 @@ export default function Footer() {
           </div>
         </div>
 
-        <div>
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.28em] text-slate-200">Newsletter</p>
-          <p className="mb-4 text-sm leading-7 text-slate-400">
-            Join our mailing list for banking insights, product launches, and market updates.
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#D4AF37]">Start here</p>
+          <p className="mt-4 text-sm leading-7 text-blue-100">
+            Explore account options or speak with a Westlakes specialist about the right next step.
           </p>
-          <form className="flex flex-col gap-3">
-            <input
-              type="email"
-              placeholder="Email address"
-              aria-label="Email address"
-              className="h-11 rounded-2xl border border-slate-700 bg-slate-900/80 px-4 text-sm text-slate-100 outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-300/20"
-            />
-            <Button type="submit" className="w-full justify-center bg-amber-400 text-slate-950 hover:bg-amber-300">
-              Subscribe
+          <div className="mt-5 grid gap-3">
+            <Button asChild className="h-11 rounded-full bg-[#D4AF37] text-[#0F172A] hover:bg-[#e6c65a]">
+              <Link to="/register">
+                Open Account
+                <ArrowUpRight className="size-4" />
+              </Link>
             </Button>
-          </form>
+            <Button variant="outline" asChild className="h-11 rounded-full border-white/20 bg-transparent text-white hover:bg-white/10">
+              <Link to="/contact">Contact Us</Link>
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="border-t border-slate-800/80 bg-slate-900 px-4 py-6 text-center text-sm text-slate-500 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="border-t border-white/10 px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl text-sm text-blue-100">
           <p>© 2026 Westlakes Bank. All rights reserved.</p>
-          <p>Designed for modern banking confidence and clarity.</p>
         </div>
       </div>
     </footer>

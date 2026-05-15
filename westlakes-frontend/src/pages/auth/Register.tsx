@@ -1,128 +1,66 @@
-import { useState, type FormEvent } from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { Link } from "react-router-dom"
+import { BadgeCheck } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { api } from "@/lib/api"
 
 export default function Register() {
-  const navigate = useNavigate()
-  const [fullName, setFullName] = useState("")
-  const [email, setEmail] = useState("")
-  const [phoneNumber, setPhoneNumber] = useState("")
-  const [nationalId, setNationalId] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setError("")
-    setLoading(true)
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.")
-      setLoading(false)
-      return
-    }
-
-    try {
-      await api.post("/api/auth/register/", {
-        full_name: fullName,
-        email,
-        phone_number: phoneNumber,
-        national_id: nationalId,
-        password,
-        password_confirm: confirmPassword,
-      })
-
-      navigate("/login", { replace: true })
-    } catch (err) {
-      setError("Unable to register. Please verify your information and try again.")
-    } finally {
-      setLoading(false)
-    }
-  }
-
   return (
-    <div className="mx-auto max-w-2xl space-y-10">
-      <section className="rounded-[2rem] bg-white p-10 shadow-sm shadow-slate-200/60">
-        <p className="text-sm uppercase tracking-[0.32em] text-amber-500">Open account</p>
-        <h1 className="mt-4 text-4xl font-semibold text-slate-950 sm:text-5xl">Create your Westlakes Bank account.</h1>
-        <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-          Start your application with secure onboarding. We ask for the essential details to get your banking journey started.
-        </p>
-      </section>
+    <div className="bg-white">
+      <section className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-20">
+        <div className="flex flex-col justify-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#D4AF37]">Open account</p>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[#0F172A] sm:text-6xl">Start your Westlakes relationship.</h1>
+          <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600">
+            Share your interest in a personal or business account. This screen is frontend-only and does not submit to a backend.
+          </p>
+          <div className="mt-8 rounded-3xl bg-[#0A3D91] p-6 text-white">
+            <BadgeCheck className="size-7 text-[#D4AF37]" />
+            <p className="mt-4 text-xl font-semibold">Premium onboarding starts with clarity.</p>
+            <p className="mt-2 leading-7 text-blue-100">No fake account creation or API calls are included in this public website implementation.</p>
+          </div>
+        </div>
 
-      <section className="rounded-[2rem] border border-slate-200 bg-slate-50 p-10 shadow-sm">
-        <form className="grid gap-5" onSubmit={handleSubmit}>
-          <div>
-            <label className="mb-3 block text-sm font-medium text-slate-700">Full name</label>
-            <Input
-              type="text"
-              placeholder="John Doe"
-              value={fullName}
-              onChange={(event) => setFullName(event.target.value)}
-              required
-            />
+        <form className="rounded-3xl border border-slate-200 bg-[#F8FAFC] p-6 shadow-xl shadow-slate-950/5 sm:p-8">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Full name
+              <Input className="h-12 rounded-2xl bg-white" placeholder="Alex Morgan" type="text" />
+            </label>
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Email address
+              <Input className="h-12 rounded-2xl bg-white" placeholder="name@example.com" type="email" />
+            </label>
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Phone number
+              <Input className="h-12 rounded-2xl bg-white" placeholder="+1 (555) 000-0000" type="tel" />
+            </label>
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Account type
+              <select className="h-12 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-[#1E5EFF] focus:ring-3 focus:ring-[#1E5EFF]/20">
+                <option>Personal banking</option>
+                <option>Business banking</option>
+                <option>Savings</option>
+                <option>Investments</option>
+              </select>
+            </label>
           </div>
-          <div>
-            <label className="mb-3 block text-sm font-medium text-slate-700">Email address</label>
-            <Input
-              type="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
+          <label className="mt-4 grid gap-2 text-sm font-semibold text-slate-700">
+            What are you looking for?
+            <textarea
+              className="min-h-36 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#1E5EFF] focus:ring-3 focus:ring-[#1E5EFF]/20"
+              placeholder="Tell us about your banking needs"
             />
-          </div>
-          <div>
-            <label className="mb-3 block text-sm font-medium text-slate-700">Phone number</label>
-            <Input
-              type="tel"
-              placeholder="+44 20 1234 5678"
-              value={phoneNumber}
-              onChange={(event) => setPhoneNumber(event.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className="mb-3 block text-sm font-medium text-slate-700">National ID / Passport</label>
-            <Input
-              type="text"
-              placeholder="ID or passport number"
-              value={nationalId}
-              onChange={(event) => setNationalId(event.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className="mb-3 block text-sm font-medium text-slate-700">Password</label>
-            <Input
-              type="password"
-              placeholder="Create a password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className="mb-3 block text-sm font-medium text-slate-700">Confirm password</label>
-            <Input
-              type="password"
-              placeholder="Confirm your password"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              required
-            />
-          </div>
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          </label>
+          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-slate-600">
-              Already have an account? <Link to="/login" className="text-amber-600 hover:text-amber-500">Sign in</Link>
+              Already have an account?{" "}
+              <Link to="/login" className="font-semibold text-[#0A3D91] hover:text-[#1E5EFF]">
+                Login
+              </Link>
             </p>
-            <Button type="submit" className="rounded-full px-6 py-3 bg-slate-950 text-white hover:bg-slate-800" disabled={loading}>
-              {loading ? "Creating account..." : "Create account"}
+            <Button type="submit" className="h-11 rounded-full bg-[#0A3D91] px-6 text-white hover:bg-[#1E5EFF]">
+              Submit Interest
             </Button>
           </div>
         </form>

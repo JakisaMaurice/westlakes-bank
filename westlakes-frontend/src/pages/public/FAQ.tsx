@@ -1,57 +1,65 @@
+import { Link } from "react-router-dom"
+
 import SectionHeading from "@/components/shared/SectionHeading"
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
 
 const faqs = [
   {
-    question: "How do I open a savings account?",
-    answer: "Click Open Account and complete the registration flow. Our team will verify your details and activate your account quickly.",
+    question: "What can I do on this public website?",
+    answer: "You can learn about Westlakes Bank, compare public services, read careers information, review FAQs, and use the contact and account-interest forms.",
   },
   {
-    question: "Can I bank from my mobile phone?",
-    answer: "Yes. Westlakes Bank offers mobile-first digital banking with secure access on smartphones and tablets.",
+    question: "Does this frontend include online banking dashboards?",
+    answer: "No. This implementation is scoped to the public-facing website only and does not add customer dashboards, admin dashboards, authentication logic, or backend APIs.",
   },
   {
-    question: "How do I speak with customer support?",
-    answer: "Visit our contact page to send a message or call the support desk. Our team is available throughout the week.",
+    question: "Which services does Westlakes Bank present publicly?",
+    answer: "The site highlights personal banking, business banking, loans, savings, and investment support.",
   },
   {
-    question: "What makes Westlakes Bank secure?",
-    answer: "We use multi-layer encryption, secure login, and proactive fraud monitoring to protect every account.",
+    question: "How can I contact Westlakes Bank?",
+    answer: "Use the Contact page to send a message or find head-office details and support hours.",
+  },
+  {
+    question: "Can I apply for a job through this site?",
+    answer: "The Careers page presents public job listings and application calls to action. No backend application processing is included in this frontend work.",
   },
 ]
 
 export default function FAQ() {
   return (
-    <div className="space-y-14">
-      <section className="rounded-[2rem] bg-white p-10 shadow-sm shadow-slate-200/60">
-        <SectionHeading
-          eyebrow="FAQ"
-          title="Answers to common banking questions."
-          description="Find concise guidance on account opening, mobile banking, support, and managing your finances with Westlakes Bank."
-        />
+    <div>
+      <section className="bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+          <SectionHeading
+            eyebrow="FAQ"
+            title="Answers for the public Westlakes Bank website."
+            description="Quick guidance on what this site includes, how to explore services, and where to start a conversation."
+          />
+        </div>
       </section>
 
-      <section className="space-y-4">
-        <Accordion type="single" defaultValue="item-0">
+      <section className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
+        <Accordion type="single" defaultValue="item-0" className="rounded-3xl border-slate-200">
           {faqs.map((item, index) => (
-            <AccordionItem value={`item-${index}`} key={item.question}>
-              <AccordionTrigger>{item.question}</AccordionTrigger>
+            <AccordionItem key={item.question} value={`item-${index}`}>
+              <AccordionTrigger className="text-[#0F172A]">{item.question}</AccordionTrigger>
               <AccordionContent>
-                <p className="leading-7">{item.answer}</p>
+                <p className="leading-7 text-slate-600">{item.answer}</p>
               </AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>
-      </section>
 
-      <section className="rounded-[1.75rem] bg-slate-50 p-8 shadow-sm border border-slate-200">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.28em] text-amber-500">Still have questions?</p>
-            <p className="mt-3 max-w-2xl text-slate-600 leading-7">Reach out at any time and our banking specialists will help you find the right solution.</p>
+        <div className="mt-10 rounded-3xl bg-[#0A3D91] p-8 text-white">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#D4AF37]">Need more help?</p>
+          <div className="mt-4 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="max-w-2xl leading-7 text-blue-100">A Westlakes specialist can help with account, lending, or service questions.</p>
+            <Button asChild className="h-11 rounded-full bg-[#D4AF37] px-6 text-[#0F172A] hover:bg-[#e6c65a]">
+              <Link to="/contact">Contact Us</Link>
+            </Button>
           </div>
-          <Button className="rounded-full bg-slate-950 px-6 py-3 text-white hover:bg-slate-800">Contact support</Button>
         </div>
       </section>
     </div>

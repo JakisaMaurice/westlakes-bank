@@ -1,75 +1,68 @@
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import SectionHeading from "@/components/shared/SectionHeading"
-import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card"
-import { MapPin, Mail, Phone, Globe2 } from "lucide-react"
-
-const contacts = [
-  { title: "Head office", detail: "1200 Lakeshore Drive, London SW1A 1AA" },
-  { title: "Email", detail: "support@westlakesbank.com" },
-  { title: "Phone", detail: "+44 20 7946 6800" },
-  { title: "Branches", detail: "Mayfair, Canary Wharf, Birmingham, Manchester" },
-]
+import { brand, contactCards } from "@/components/shared/siteData"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 
 export default function Contact() {
   return (
-    <div className="space-y-14">
-      <section className="rounded-[2rem] bg-white p-10 shadow-sm shadow-slate-200/60">
-        <SectionHeading
-          eyebrow="Contact"
-          title="Reach Westlakes Bank support and local branches."
-          description="Need help opening an account, discussing a product, or contacting our team? Send a message or visit a branch near you."
-        />
+    <div>
+      <section className="bg-white">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-20">
+          <SectionHeading
+            eyebrow="Contact"
+            title="Reach a Westlakes specialist."
+            description="Questions about accounts, lending, business banking, careers, or public website information can start here."
+          />
+          <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+            {contactCards.map((card) => {
+              const Icon = card.icon
+              return (
+                <Card key={card.title} className="rounded-2xl border-slate-200 bg-[#F8FAFC] p-2 shadow-sm">
+                  <CardContent className="flex gap-4 p-4">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-[#0A3D91] shadow-sm">
+                      <Icon className="size-5" />
+                    </span>
+                    <div>
+                      <CardTitle className="text-base">{card.title}</CardTitle>
+                      <CardDescription className="mt-1 leading-6 text-slate-600">{card.description}</CardDescription>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        </div>
       </section>
 
-      <section className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="space-y-6 rounded-[2rem] border border-slate-200 bg-slate-50 p-8 shadow-sm">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {contacts.map((item) => (
-              <Card key={item.title} className="rounded-[1.75rem] border border-slate-200">
-                <CardContent className="space-y-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-slate-900 text-white">
-                    {item.title === "Email" ? <Mail className="size-5" /> : item.title === "Phone" ? <Phone className="size-5" /> : item.title === "Branches" ? <Globe2 className="size-5" /> : <MapPin className="size-5" />}
-                  </div>
-                  <CardTitle>{item.title}</CardTitle>
-                  <CardDescription>{item.detail}</CardDescription>
-                </CardContent>
-              </Card>
+      <section className="mx-auto grid max-w-7xl gap-8 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:px-8">
+        <form className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#D4AF37]">Send a message</p>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <Input className="h-12 rounded-2xl bg-[#F8FAFC]" placeholder="Full name" type="text" />
+            <Input className="h-12 rounded-2xl bg-[#F8FAFC]" placeholder="Email address" type="email" />
+          </div>
+          <Input className="mt-4 h-12 rounded-2xl bg-[#F8FAFC]" placeholder="Phone number" type="tel" />
+          <textarea
+            className="mt-4 min-h-40 w-full rounded-2xl border border-slate-200 bg-[#F8FAFC] px-4 py-3 text-sm outline-none transition focus:border-[#1E5EFF] focus:ring-3 focus:ring-[#1E5EFF]/20"
+            placeholder="How can we help?"
+          />
+          <Button type="submit" className="mt-5 h-12 rounded-full bg-[#0A3D91] px-6 text-white hover:bg-[#1E5EFF]">
+            Send Message
+          </Button>
+        </form>
+
+        <div className="rounded-3xl bg-[#0A3D91] p-8 text-white shadow-2xl shadow-[#0A3D91]/20">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#D4AF37]">Visit us</p>
+          <h2 className="mt-4 text-3xl font-semibold">Head office and appointment hours</h2>
+          <p className="mt-4 leading-8 text-blue-100">{brand.address}</p>
+          <div className="mt-8 grid gap-3">
+            {["Monday-Friday: 8:00 AM-6:00 PM", "Saturday: By appointment", "Digital support: 24/7"].map((item) => (
+              <div key={item} className="rounded-2xl border border-white/10 bg-white/10 p-4 text-blue-50">
+                {item}
+              </div>
             ))}
           </div>
-          <div className="rounded-[1.75rem] bg-white p-8 shadow-sm">
-            <p className="text-sm uppercase tracking-[0.28em] text-amber-500">Office hours</p>
-            <p className="mt-4 text-slate-600 leading-7">Monday to Friday, 8:00 AM – 6:00 PM. Our support team is available for inquiries and branch appointments.</p>
-          </div>
-        </div>
-
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
-          <p className="text-sm uppercase tracking-[0.32em] text-amber-500">Send us a note</p>
-          <form className="mt-6 grid gap-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input type="text" placeholder="Full name" />
-              <Input type="email" placeholder="Email address" />
-            </div>
-            <Input type="tel" placeholder="Phone number" />
-            <textarea
-              rows={5}
-              placeholder="How can we help you?"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-300/20"
-            />
-            <Button type="submit" className="rounded-full bg-slate-950 px-6 py-3 text-white hover:bg-slate-800">
-              Send message
-            </Button>
-          </form>
-        </div>
-      </section>
-
-      <section className="rounded-[2rem] border border-slate-200 bg-slate-50 p-8 shadow-sm">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.28em] text-amber-500">Map</p>
-            <p className="mt-3 max-w-xl text-slate-600 leading-7">Visit us at our head office or any of our branch locations. This placeholder represents a future embedded map.</p>
-          </div>
-          <div className="h-72 w-full rounded-3xl bg-gradient-to-br from-slate-200 via-slate-300 to-slate-200 lg:w-2/3" />
         </div>
       </section>
     </div>
