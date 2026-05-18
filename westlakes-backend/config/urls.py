@@ -16,9 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from .contact_views import contact_message
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/contact/', contact_message, name='contact-message'),
     path('api/auth/', include('users.urls')),
     path('api/accounts/', include('accounts.urls')),
     path('api/transactions/', include('transactions.urls')),
@@ -26,4 +28,3 @@ urlpatterns = [
     path('api/notifications/', include('notifications.urls')),
     path('api/admin/', include('reports.urls')),
 ]
-
