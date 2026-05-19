@@ -23,6 +23,7 @@ import AdminDashboard from "@/pages/admin/AdminDashboard"
 import CustomerManagement from "@/pages/admin/CustomerManagement"
 import CustomerDetail from "@/pages/admin/CustomerDetail"
 import AccountApprovals from "@/pages/admin/AccountApprovals"
+import VerificationManagement from "@/pages/admin/VerificationManagement"
 import TransactionMonitoring from "@/pages/admin/TransactionMonitoring"
 import TicketManagement from "@/pages/admin/TicketManagement"
 import Reports from "@/pages/admin/Reports"
@@ -60,6 +61,7 @@ function AppRoutes() {
             <Route index element={<AdminDashboard />} />
             <Route path="customers" element={<CustomerManagement />} />
             <Route path="customers/:id" element={<CustomerDetail />} />
+            <Route path="verifications" element={<VerificationManagement />} />
             <Route path="account-approvals" element={<AccountApprovals />} />
             <Route path="transactions" element={<TransactionMonitoring />} />
             <Route path="tickets" element={<TicketManagement />} />

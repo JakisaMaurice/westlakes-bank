@@ -22,6 +22,8 @@ export interface Customer {
   accounts: BankAccount[]
   total_balance: string
   primary_account: BankAccount | null
+  kyc_status: string | null
+  kyc_status_code: string | null
 }
 
 export interface CustomerListResponse {
@@ -40,11 +42,15 @@ export interface Transaction {
   sender_name: string | null
   receiver_name: string | null
   transaction_type: string
+  deposit_type: string | null
+  deposit_type_display: string | null
   amount: string
+  fee: string
   transaction_reference: string
   status: string
   timestamp: string
   description: string
+  balance_after: string | null
 }
 
 export interface TransactionListResponse {
@@ -101,6 +107,7 @@ export interface DepositPayload {
   receiver_account_number: string
   amount: string
   description?: string
+  deposit_type?: string
 }
 
 export interface SendMessagePayload {
@@ -114,6 +121,7 @@ export interface CustomerFilters {
   search?: string
   status?: string
   account_type?: string
+  kyc_status?: string
   is_verified?: boolean
   ordering?: string
   page?: number
@@ -126,6 +134,7 @@ const customerService = {
     if (filters.search) params.set("search", filters.search)
     if (filters.status) params.set("status", filters.status)
     if (filters.account_type) params.set("account_type", filters.account_type)
+    if (filters.kyc_status) params.set("kyc_status", filters.kyc_status)
     if (filters.is_verified !== undefined) params.set("is_verified", String(filters.is_verified))
     if (filters.ordering) params.set("ordering", filters.ordering)
     if (filters.page) params.set("page", String(filters.page))
@@ -200,6 +209,14 @@ const customerService = {
 
   markMessageRead: (messageId: number) => {
     return api.post<Message>(`/api/messages/${messageId}/read/`)
+  },
+
+  setTransactionPin: (pin: string, password: string) => {
+    return api.post("/api/auth/set-pin/", { pin, password })
+  },
+
+  verifyTransactionPin: (pin: string) => {
+    return api.post<{ valid: boolean }>("/api/auth/verify-pin/", { pin })
   },
 }
 

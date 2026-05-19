@@ -1,5 +1,5 @@
 import { Outlet, useNavigate } from "react-router-dom"
-import { LayoutDashboard, Users, ShieldCheck, TrendingUp, MessageSquare, FileText, Menu } from "lucide-react"
+import { LayoutDashboard, Users, ShieldCheck, TrendingUp, MessageSquare, FileText, Menu, UserCheck } from "lucide-react"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { useAuth } from "@/lib/auth"
 import { DashboardSidebar } from "@/components/dashboard/Sidebar"
@@ -8,6 +8,7 @@ import { TopNavbar } from "@/components/dashboard/TopNavbar"
 const adminNav = [
   { label: "Dashboard Overview", to: "", icon: LayoutDashboard },
   { label: "Customers", to: "customers", icon: Users },
+  { label: "KYC Verifications", to: "verifications", icon: UserCheck },
   { label: "Account Approvals", to: "account-approvals", icon: ShieldCheck },
   { label: "Transactions", to: "transactions", icon: TrendingUp },
   { label: "Support Tickets", to: "tickets", icon: MessageSquare },
