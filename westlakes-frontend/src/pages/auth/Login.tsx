@@ -35,7 +35,7 @@ export default function Login() {
         return
       }
 
-      navigate("/customer", { replace: true })
+      navigate("/dashboard", { replace: true })
     } catch {
       setError("Unable to sign in. Please check your email and password.")
     } finally {

@@ -9,9 +9,19 @@ export const api = axios.create({
   },
 })
 
+const authEndpointPaths = [
+  "/api/auth/login/",
+  "/api/auth/register/",
+  "/api/auth/register/admin/",
+  "/api/auth/token/refresh/",
+]
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken")
-  if (token && config.headers) {
+  const url = config.url ?? ""
+  const isAuthEndpoint = authEndpointPaths.some((path) => url.includes(path))
+
+  if (token && config.headers && !isAuthEndpoint) {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config

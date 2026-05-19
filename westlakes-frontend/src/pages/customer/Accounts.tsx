@@ -34,30 +34,30 @@ export default function Accounts() {
   }, [accounts])
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm uppercase tracking-[0.28em] text-amber-500">Accounts</p>
-          <h1 className="mt-3 text-3xl font-semibold text-slate-950">Your active accounts</h1>
+          <p className="text-[9px] uppercase tracking-[0.28em] text-amber-500">Accounts</p>
+          <h1 className="mt-1.5 text-xl font-semibold text-slate-950">Your active accounts</h1>
         </div>
-        <Button className="rounded-full bg-slate-950 px-6 py-3 text-white hover:bg-slate-800">Open new account</Button>
+        <Button size="sm" className="rounded-full bg-slate-950 px-5 text-white hover:bg-slate-800">Open new account</Button>
       </div>
 
       {loading ? (
-        <p className="text-slate-600">Loading accounts...</p>
+        <p className="text-sm text-slate-600">Loading accounts...</p>
       ) : error ? (
-        <p className="text-red-600">{error}</p>
+        <p className="text-sm text-red-600">{error}</p>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-3">
           {accounts.map((account) => (
-            <Card key={account.id} className="rounded-[1.75rem] border-slate-200">
-              <CardContent className="space-y-4">
+            <Card key={account.id} className="rounded-2xl border-slate-200">
+              <CardContent className="space-y-3">
                 <div>
-                  <p className="text-sm uppercase tracking-[0.24em] text-slate-500">{account.account_type}</p>
-                  <CardTitle>{account.account_number}</CardTitle>
+                  <p className="text-[9px] uppercase tracking-[0.24em] text-slate-500">{account.account_type}</p>
+                  <CardTitle className="text-sm">{account.account_number}</CardTitle>
                 </div>
-                <CardDescription>{account.status}</CardDescription>
-                <div className="mt-4 text-2xl font-semibold text-slate-950">
+                <CardDescription className="text-xs">{account.status}</CardDescription>
+                <div className="text-lg font-semibold text-slate-950">
                   {Number(account.balance).toLocaleString("en-GB", { style: "currency", currency: "GBP" })}
                 </div>
               </CardContent>
@@ -66,16 +66,16 @@ export default function Accounts() {
         </div>
       )}
 
-      <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
-        <p className="text-sm uppercase tracking-[0.28em] text-amber-500">Account summary</p>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-3xl bg-slate-50 p-6">
-            <p className="text-sm text-slate-500">Total balance</p>
-            <p className="mt-3 text-3xl font-semibold text-slate-950">{totals.total}</p>
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <p className="text-[9px] uppercase tracking-[0.28em] text-amber-500">Account summary</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="text-xs text-slate-500">Total balance</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-950">{totals.total}</p>
           </div>
-          <div className="rounded-3xl bg-slate-50 p-6">
-            <p className="text-sm text-slate-500">Accounts open</p>
-            <p className="mt-3 text-3xl font-semibold text-slate-950">{totals.count}</p>
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="text-xs text-slate-500">Accounts open</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-950">{totals.count}</p>
           </div>
         </div>
       </div>

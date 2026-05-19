@@ -19,19 +19,19 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="border-b border-slate-200 bg-white py-4 shadow-sm">
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="border-b border-slate-800 bg-slate-900/95 py-5 shadow-2xl shadow-slate-950/20 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">Admin Dashboard</p>
-            <h1 className="text-2xl font-semibold text-slate-950">Westlakes Bank</h1>
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-400">Admin Dashboard</p>
+            <h1 className="text-2xl font-semibold text-white">Westlakes Bank</h1>
             {user ? (
-              <p className="text-sm text-slate-600">Signed in as {user.full_name}</p>
+              <p className="text-sm text-slate-400">Signed in as {user.full_name}</p>
             ) : null}
           </div>
           <button
             onClick={handleSignOut}
-            className="rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200"
+            className="rounded-full border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-cyan-400/40 hover:bg-slate-700"
           >
             Sign out
           </button>
@@ -39,9 +39,9 @@ export default function AdminLayout() {
       </div>
 
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[280px_1fr] lg:px-8">
-        <aside className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+        <aside className="rounded-[2rem] border border-slate-800 bg-slate-900/95 p-6 shadow-2xl shadow-slate-950/20">
           <div className="mb-8">
-            <p className="text-sm uppercase tracking-[0.28em] text-amber-500">Menu</p>
+            <p className="text-sm uppercase tracking-[0.28em] text-cyan-300">Menu</p>
           </div>
           <nav className="space-y-2">
             {adminNav.map((item) => (
@@ -50,7 +50,9 @@ export default function AdminLayout() {
                 to={item.to}
                 className={({ isActive }) =>
                   `block rounded-2xl px-4 py-3 text-sm font-medium transition ${
-                    isActive ? "bg-slate-950 text-white" : "text-slate-700 hover:bg-slate-100"
+                    isActive
+                      ? "bg-slate-800 text-white shadow-lg shadow-cyan-500/10"
+                      : "text-slate-300 hover:bg-slate-950/80 hover:text-white"
                   }`
                 }
               >
@@ -60,7 +62,7 @@ export default function AdminLayout() {
           </nav>
         </aside>
 
-        <main className="rounded-[2rem] bg-white p-8 shadow-sm">
+        <main className="rounded-[2rem] bg-slate-900/95 p-8 shadow-2xl shadow-slate-950/40 ring-1 ring-white/5">
           <Outlet />
         </main>
       </div>
