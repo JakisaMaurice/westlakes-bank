@@ -32,15 +32,15 @@ interface Account {
   account_number: string
 }
 
-const statusLabel = (status: string) => {
-  const map: Record<string, string> = {
-    PENDING: "Awaiting review",
-    APPROVED: "Approved",
-    REJECTED: "Rejected",
-    ACTIVE: "Approved",
+  const statusLabel = (status: string) => {
+    const map: Record<string, string> = {
+      PENDING_VERIFICATION: "Awaiting review",
+      APPROVED: "Approved",
+      REJECTED: "Rejected",
+      ACTIVE: "Active",
+    }
+    return map[status] || status
   }
-  return map[status] || status
-}
 
 const formatCompact = (value: number) => {
   if (value >= 1_000_000) return `£${(value / 1_000_000).toFixed(1)}M`
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
         ])
         setAnalytics(analyticsRes.data)
         setTickets(ticketsRes.data.slice(0, 5))
-        setPendingAccounts(accountsRes.data.filter((a) => a.status === "PENDING").slice(0, 3))
+        setPendingAccounts(accountsRes.data.filter((a) => a.status === "PENDING_VERIFICATION").slice(0, 3))
       } catch {
         setError("Failed to load dashboard data.")
       } finally {
