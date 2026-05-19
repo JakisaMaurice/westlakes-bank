@@ -11,6 +11,7 @@ from users.permissions import IsCustomer, IsAdmin, IsSupport
 class TicketListCreateView(generics.ListCreateAPIView):
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         user = self.request.user

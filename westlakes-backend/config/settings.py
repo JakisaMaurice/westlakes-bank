@@ -13,8 +13,24 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Load environment variables from .env in development
+def load_dotenv(env_path: Path):
+    if not env_path.exists():
+        return
+    for line in env_path.read_text().splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith('#'):
+            continue
+        if '=' not in stripped:
+            continue
+        key, value = stripped.split('=', 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -41,12 +57,15 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
+    'django_filters',
     'users',
     'accounts',
     'transactions',
     'tickets',
     'notifications',
     'reports',
+    'audit_logs',
+    'messaging',
 ]
 
 MIDDLEWARE = [
@@ -138,6 +157,11 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
 }
 
 SIMPLE_JWT = {
@@ -163,3 +187,6 @@ CONTACT_RECIPIENT_EMAIL = os.environ.get(
     'CONTACT_RECIPIENT_EMAIL',
     'hello@westlakes.bank'
 )
+
+# Admin registration protection
+ADMIN_REGISTRATION_CODE = os.environ.get('ADMIN_REGISTRATION_CODE')

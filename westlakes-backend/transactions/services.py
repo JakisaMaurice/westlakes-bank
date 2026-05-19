@@ -1,4 +1,6 @@
 from django.db import transaction as db_transaction
+from django.core.mail import send_mail
+from django.conf import settings
 from .models import Transaction
 from accounts.models import BankAccount
 from notifications.models import Notification
@@ -36,6 +38,49 @@ class TransactionService:
 
             # Create notifications
             TransactionService._create_transaction_notifications(transaction)
+            
+            # Send email notifications
+            TransactionService._send_transaction_emails(transaction)
+
+    @staticmethod
+    def _send_transaction_emails(transaction):
+        """
+        Send email notifications for transactions.
+        """
+        if not getattr(settings, 'EMAIL_HOST', None):
+            # Skip email if not configured
+            return
+            
+        if transaction.transaction_type == 'DEPOSIT':
+            # Send deposit confirmation email to customer
+            try:
+                send_mail(
+                    subject=f'Deposit Confirmation - {transaction.amount}',
+                    message=f'''
+Hello {transaction.receiver_account.user.full_name},
+
+Your deposit of £{transaction.amount} has been successfully processed.
+
+Transaction Details:
+- Amount: £{transaction.amount}
+- Reference: {transaction.transaction_reference}
+- Date: {transaction.timestamp.strftime('%Y-%m-%d %H:%M:%S')}
+- Status: {transaction.status}
+
+Your new account balance is: £{transaction.receiver_account.balance}
+
+Thank you for banking with Westlakes Bank.
+
+Best regards,
+Westlakes Bank Team
+                    ''',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[transaction.receiver_account.user.email],
+                    fail_silently=False,
+                )
+            except Exception:
+                # Log error but don't fail the transaction
+                pass
 
     @staticmethod
     def _create_transaction_notifications(transaction):

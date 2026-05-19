@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.db.models import Q
 from .models import Transaction
-from .serializers import TransactionSerializer, TransactionCreateSerializer, DepositSerializer, WithdrawalSerializer
+from .serializers import TransactionSerializer, TransactionCreateSerializer, DepositSerializer, WithdrawalSerializer, AdminDepositSerializer
 from .services import TransactionService
 from users.permissions import IsCustomer, IsAdmin
 
@@ -60,6 +60,25 @@ class TransferView(generics.CreateAPIView):
 class DepositView(generics.CreateAPIView):
     serializer_class = DepositSerializer
     permission_classes = [IsCustomer]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        transaction = serializer.save()
+
+        # Process the deposit
+        try:
+            TransactionService.process_transaction(transaction)
+            return Response(TransactionSerializer(transaction).data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            transaction.status = 'FAILED'
+            transaction.save()
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminDepositView(generics.CreateAPIView):
+    serializer_class = AdminDepositSerializer
+    permission_classes = [IsAdmin]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

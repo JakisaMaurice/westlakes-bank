@@ -108,3 +108,34 @@ class WithdrawalSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return super().create(validated_data)
+
+
+class AdminDepositSerializer(serializers.ModelSerializer):
+    receiver_account_number = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = Transaction
+        fields = ['receiver_account_number', 'amount', 'description']
+
+    def validate(self, attrs):
+        # For admin deposits, we don't require the admin to have an account
+        # We just need to validate the receiver account exists and is active
+        receiver_account_number = attrs['receiver_account_number']
+        try:
+            receiver_account = BankAccount.objects.get(
+                account_number=receiver_account_number,
+                status='ACTIVE'
+            )
+        except BankAccount.DoesNotExist:
+            raise serializers.ValidationError("Invalid receiver account")
+
+        attrs['receiver_account'] = receiver_account
+        attrs['transaction_type'] = 'DEPOSIT'
+        # Admin doesn't need a sender account for deposits
+        return attrs
+
+    def create(self, validated_data):
+        validated_data.pop('receiver_account_number')
+        # Set sender_account to None for admin deposits
+        validated_data['sender_account'] = None
+        return super().create(validated_data)

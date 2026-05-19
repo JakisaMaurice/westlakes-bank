@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
-import uuid
+import random
 
 
 class BankAccount(models.Model):
@@ -16,6 +16,8 @@ class BankAccount(models.Model):
         ('ACTIVE', 'Active'),
         ('SUSPENDED', 'Suspended'),
         ('REJECTED', 'Rejected'),
+        ('FROZEN', 'Frozen'),
+        ('LOCKED', 'Locked'),
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='accounts')
@@ -30,9 +32,10 @@ class BankAccount(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.account_number:
-            # Generate a unique account number
+            prefix = {'SAVINGS': '100', 'CURRENT': '200', 'BUSINESS': '300'}.get(self.account_type, '100')
             while True:
-                account_number = f"{uuid.uuid4().hex[:12].upper()}"
+                suffix = ''.join([str(random.randint(0, 9)) for _ in range(10)])
+                account_number = f"{prefix}{suffix}"
                 if not BankAccount.objects.filter(account_number=account_number).exists():
                     self.account_number = account_number
                     break
@@ -50,3 +53,10 @@ class BankAccount(models.Model):
     def is_suspended(self):
         return self.status == 'SUSPENDED'
 
+    @property
+    def is_frozen(self):
+        return self.status == 'FROZEN'
+
+    @property
+    def is_locked(self):
+        return self.status == 'LOCKED'

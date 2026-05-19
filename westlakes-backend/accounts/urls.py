@@ -10,4 +10,7 @@ urlpatterns = [
     path('<int:account_id>/reject/', views.reject_account, name='reject-account'),
     path('<int:account_id>/suspend/', views.suspend_account, name='suspend-account'),
     path('<int:account_id>/activate/', views.activate_account, name='activate-account'),
+    path('<int:account_id>/freeze/', views.freeze_account, name='freeze-account'),
+    path('<int:account_id>/lock/', views.lock_account, name='lock-account'),
+    path('<int:account_id>/unlock/', views.unlock_account, name='unlock-account'),
 ]
