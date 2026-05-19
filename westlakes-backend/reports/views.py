@@ -41,7 +41,7 @@ def dashboard_analytics(request):
     # Account statistics
     total_accounts = BankAccount.objects.count()
     active_accounts = BankAccount.objects.filter(status='ACTIVE').count()
-    pending_accounts = BankAccount.objects.filter(status='PENDING').count()
+    pending_accounts = BankAccount.objects.filter(status='PENDING_VERIFICATION').count()
 
     # Transaction statistics (last 30 days)
     thirty_days_ago = datetime.now() - timedelta(days=30)
@@ -57,7 +57,7 @@ def dashboard_analytics(request):
     six_months_ago = datetime.now() - timedelta(days=180)
     monthly_transactions = (
         Transaction.objects
-        .filter(timestamp__gte=six_months_ago, status='COMPLETED')
+        .filter(timestamp__gte=six_months_ago, status='SUCCESSFUL')
         .annotate(month=TruncMonth('timestamp'))
         .values('month')
         .annotate(count=Count('id'), volume=Sum('amount'))
@@ -115,6 +115,80 @@ def transaction_summary_report(request):
     data = {
         'summary': summary,
         'type_breakdown': list(type_breakdown),
+    }
+
+    return Response(data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAdmin])
+def full_analytics(request):
+    """
+    Get comprehensive analytics for the reports page:
+    - Customers joined per month
+    - Deposits per month
+    - Withdrawals per month
+    - Transactions per month
+    """
+    six_months_ago = datetime.now() - timedelta(days=180)
+
+    # Customers joined per month
+    customers_joined = (
+        User.objects
+        .filter(role='CUSTOMER', created_at__gte=six_months_ago)
+        .annotate(month=TruncMonth('created_at'))
+        .values('month')
+        .annotate(count=Count('id'))
+        .order_by('month')
+    )
+
+    # Deposits per month
+    deposits = (
+        Transaction.objects
+        .filter(transaction_type='DEPOSIT', status='SUCCESSFUL', timestamp__gte=six_months_ago)
+        .annotate(month=TruncMonth('timestamp'))
+        .values('month')
+        .annotate(total=Sum('amount'))
+        .order_by('month')
+    )
+
+    # Withdrawals per month
+    withdrawals = (
+        Transaction.objects
+        .filter(transaction_type='WITHDRAWAL', status='SUCCESSFUL', timestamp__gte=six_months_ago)
+        .annotate(month=TruncMonth('timestamp'))
+        .values('month')
+        .annotate(total=Sum('amount'))
+        .order_by('month')
+    )
+
+    # All transactions per month
+    transactions_monthly = (
+        Transaction.objects
+        .filter(status='SUCCESSFUL', timestamp__gte=six_months_ago)
+        .annotate(month=TruncMonth('timestamp'))
+        .values('month')
+        .annotate(count=Count('id'), volume=Sum('amount'))
+        .order_by('month')
+    )
+
+    data = {
+        'customers_joined': [
+            {'month': item['month'].isoformat(), 'count': item['count']}
+            for item in customers_joined
+        ],
+        'deposits': [
+            {'month': item['month'].isoformat(), 'total': float(item['total'] or 0)}
+            for item in deposits
+        ],
+        'withdrawals': [
+            {'month': item['month'].isoformat(), 'total': float(item['total'] or 0)}
+            for item in withdrawals
+        ],
+        'transactions': [
+            {'month': item['month'].isoformat(), 'count': item['count'], 'volume': float(item['volume'] or 0)}
+            for item in transactions_monthly
+        ],
     }
 
     return Response(data)

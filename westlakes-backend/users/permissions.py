@@ -17,7 +17,7 @@ class IsAdmin(permissions.BasePermission):
     Custom permission to only allow admins to access admin endpoints.
     """
     def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated and request.user.role == 'ADMIN'
+        return request.user and request.user.is_authenticated and request.user.role in ['ADMIN', 'SUPER_ADMIN']
 
 
 class IsSupport(permissions.BasePermission):

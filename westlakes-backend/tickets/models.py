@@ -32,3 +32,18 @@ class Ticket(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+
+class TicketReply(models.Model):
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='replies')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='ticket_replies')
+    message = models.TextField()
+    is_admin_reply = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        author_type = "Admin" if self.is_admin_reply else "Customer"
+        return f"Reply by {author_type} on Ticket #{self.ticket.id}"
+
+    class Meta:
+        ordering = ['created_at']

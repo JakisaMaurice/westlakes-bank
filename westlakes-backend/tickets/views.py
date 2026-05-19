@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import Ticket
-from .serializers import TicketSerializer, TicketCreateSerializer, TicketUpdateSerializer
+from .serializers import TicketSerializer, TicketCreateSerializer, TicketUpdateSerializer, TicketReplyCreateSerializer
 from users.permissions import IsCustomer, IsAdmin, IsSupport
 
 
@@ -80,3 +80,36 @@ def close_ticket(request, ticket_id):
 
     serializer = TicketSerializer(ticket)
     return Response(serializer.data)
+
+
+class TicketReplyView(generics.CreateAPIView):
+    serializer_class = TicketReplyCreateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, ticket_id):
+        ticket = get_object_or_404(Ticket, id=ticket_id)
+
+        if ticket.status == 'CLOSED':
+            return Response({'error': 'Cannot reply to a closed ticket.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if request.user != ticket.customer and not (request.user.is_admin or request.user.role == 'SUPPORT'):
+            return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        is_admin = request.user.is_admin or request.user.role == 'SUPPORT'
+        reply = serializer.save(
+            ticket=ticket,
+            author=request.user,
+            is_admin_reply=is_admin
+        )
+
+        if is_admin:
+            ticket.status = 'IN_PROGRESS'
+        else:
+            ticket.status = 'OPEN'
+        ticket.save()
+
+        from .serializers import TicketReplySerializer
+        return Response(TicketReplySerializer(reply).data, status=status.HTTP_201_CREATED)
