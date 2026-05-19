@@ -16,11 +16,38 @@ class TransactionListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         if user.is_admin:
-            return Transaction.objects.all()
-        # Return transactions where user is sender or receiver
-        return Transaction.objects.filter(
-            Q(sender_account__user=user) | Q(receiver_account__user=user)
-        ).distinct()
+            queryset = Transaction.objects.all()
+        else:
+            queryset = Transaction.objects.filter(
+                Q(sender_account__user=user) | Q(receiver_account__user=user)
+            ).distinct()
+
+        transaction_type = self.request.query_params.get('type')
+        if transaction_type:
+            queryset = queryset.filter(transaction_type=transaction_type.upper())
+
+        status_param = self.request.query_params.get('status')
+        if status_param:
+            queryset = queryset.filter(status=status_param.upper())
+
+        date_from = self.request.query_params.get('date_from')
+        if date_from:
+            queryset = queryset.filter(timestamp__date__gte=date_from)
+
+        date_to = self.request.query_params.get('date_to')
+        if date_to:
+            queryset = queryset.filter(timestamp__date__lte=date_to)
+
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(transaction_reference__icontains=search) |
+                Q(description__icontains=search) |
+                Q(sender_account__account_number__icontains=search) |
+                Q(receiver_account__account_number__icontains=search)
+            )
+
+        return queryset
 
 
 class TransactionDetailView(generics.RetrieveAPIView):
@@ -32,7 +59,6 @@ class TransactionDetailView(generics.RetrieveAPIView):
         user = self.request.user
         if user.is_admin:
             return Transaction.objects.all()
-        # Return transactions where user is sender or receiver
         return Transaction.objects.filter(
             Q(sender_account__user=user) | Q(receiver_account__user=user)
         ).distinct()
@@ -47,7 +73,6 @@ class TransferView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         transaction = serializer.save()
 
-        # Process the transaction
         try:
             TransactionService.process_transaction(transaction)
             return Response(TransactionSerializer(transaction).data, status=status.HTTP_201_CREATED)
@@ -66,7 +91,6 @@ class DepositView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         transaction = serializer.save()
 
-        # Process the deposit
         try:
             TransactionService.process_transaction(transaction)
             return Response(TransactionSerializer(transaction).data, status=status.HTTP_201_CREATED)
@@ -85,7 +109,6 @@ class AdminDepositView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         transaction = serializer.save()
 
-        # Process the deposit
         try:
             TransactionService.process_transaction(transaction)
             return Response(TransactionSerializer(transaction).data, status=status.HTTP_201_CREATED)
@@ -104,7 +127,6 @@ class WithdrawalView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         transaction = serializer.save()
 
-        # Process the withdrawal
         try:
             TransactionService.process_transaction(transaction)
             return Response(TransactionSerializer(transaction).data, status=status.HTTP_201_CREATED)
@@ -113,3 +135,16 @@ class WithdrawalView(generics.CreateAPIView):
             transaction.save()
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
+@api_view(['POST'])
+@permission_classes([IsAdmin])
+def reverse_transaction(request, transaction_id):
+    from django.shortcuts import get_object_or_404
+    transaction = get_object_or_404(Transaction, id=transaction_id)
+    reason = request.data.get('reason', '')
+
+    try:
+        TransactionService.reverse_transaction(transaction, reason=reason, admin=request.user)
+        return Response(TransactionSerializer(transaction).data)
+    except ValueError as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

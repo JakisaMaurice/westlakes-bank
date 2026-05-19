@@ -36,7 +36,7 @@ class BankAccountDetailView(generics.RetrieveAPIView):
 @permission_classes([IsAdmin])
 def approve_account(request, account_id):
     account = get_object_or_404(BankAccount, id=account_id)
-    if account.status != 'PENDING':
+    if account.status != 'PENDING_VERIFICATION':
         return Response({'error': 'Account is not pending approval'}, status=status.HTTP_400_BAD_REQUEST)
     AccountService.approve_account(account, admin=request.user)
     serializer = BankAccountSerializer(account)
@@ -47,7 +47,7 @@ def approve_account(request, account_id):
 @permission_classes([IsAdmin])
 def reject_account(request, account_id):
     account = get_object_or_404(BankAccount, id=account_id)
-    if account.status != 'PENDING':
+    if account.status != 'PENDING_VERIFICATION':
         return Response({'error': 'Account is not pending approval'}, status=status.HTTP_400_BAD_REQUEST)
     reason = request.data.get('reason', '')
     AccountService.reject_account(account, reason=reason, admin=request.user)

@@ -9,10 +9,14 @@ from django.db.models import Q
 from .models import User
 from .serializers import (
     UserSerializer, UserRegistrationSerializer, AdminRegistrationSerializer,
-    UserLoginSerializer, UserProfileUpdateSerializer, CustomerAdminSerializer
+    UserLoginSerializer, UserProfileUpdateSerializer, CustomerAdminSerializer,
+    TransactionPinSerializer
 )
 from .permissions import IsCustomer, IsAdmin
 from audit_logs.models import AuditLog
+from accounts.models import BankAccount
+from notifications.models import Notification
+from users.models import KYCVerification
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -31,6 +35,17 @@ class UserRegistrationView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
+        BankAccount.objects.create(user=user, account_type='SAVINGS', status='PENDING_VERIFICATION')
+
+        KYCVerification.objects.create(user=user, status='PENDING_VERIFICATION')
+
+        Notification.objects.create(
+            user=user,
+            notification_type='GENERAL',
+            title='Welcome to Westlakes Bank',
+            message='Please complete your account setup by uploading your KYC documents.'
+        )
+
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
 
@@ -40,7 +55,7 @@ class UserRegistrationView(generics.CreateAPIView):
                 'refresh': str(refresh),
                 'access': access_token,
             },
-            'message': 'User registered successfully. Account is pending approval.'
+            'message': 'User registered successfully. Please complete KYC verification.'
         }
 
         return Response(response_data, status=status.HTTP_201_CREATED)
@@ -80,12 +95,19 @@ def user_login(request):
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
 
+        kyc_status = None
+        try:
+            kyc_status = user.kyc_verification.status
+        except KYCVerification.DoesNotExist:
+            kyc_status = 'NOT_STARTED'
+
         return Response({
             'user': UserSerializer(user).data,
             'tokens': {
                 'refresh': str(refresh),
                 'access': access_token,
             },
+            'kyc_status': kyc_status,
             'message': 'Login successful'
         })
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -104,13 +126,44 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         return UserSerializer
 
 
+@api_view(['POST'])
+@permission_classes([IsCustomer])
+def set_transaction_pin(request):
+    serializer = TransactionPinSerializer(data=request.data, context={'request': request})
+    if serializer.is_valid():
+        user = request.user
+        user.set_transaction_pin(serializer.validated_data['pin'])
+        user.save()
+
+        AuditLog.objects.create(
+            customer=user,
+            action='TRANSACTION_PIN_SET',
+            notes='Transaction PIN set/changed'
+        )
+
+        return Response({'message': 'Transaction PIN set successfully'})
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsCustomer])
+def verify_transaction_pin(request):
+    pin = request.data.get('pin')
+    if not pin:
+        return Response({'error': 'PIN is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if request.user.check_transaction_pin(pin):
+        return Response({'valid': True})
+    return Response({'valid': False, 'error': 'Invalid PIN'}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class CustomerListView(generics.ListAPIView):
     serializer_class = CustomerAdminSerializer
     permission_classes = [IsAdmin]
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        queryset = User.objects.filter(role='CUSTOMER').prefetch_related('accounts')
+        queryset = User.objects.filter(role='CUSTOMER').prefetch_related('accounts', 'kyc_verification')
 
         search = self.request.query_params.get('search')
         if search:
@@ -125,6 +178,10 @@ class CustomerListView(generics.ListAPIView):
         status_param = self.request.query_params.get('status')
         if status_param:
             queryset = queryset.filter(accounts__status=status_param.upper()).distinct()
+
+        kyc_status = self.request.query_params.get('kyc_status')
+        if kyc_status:
+            queryset = queryset.filter(kyc_verification__status=kyc_status.upper()).distinct()
 
         account_type = self.request.query_params.get('account_type')
         if account_type:
@@ -145,7 +202,7 @@ class CustomerListView(generics.ListAPIView):
 class CustomerDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = CustomerAdminSerializer
     permission_classes = [IsAdmin]
-    queryset = User.objects.filter(role='CUSTOMER').prefetch_related('accounts')
+    queryset = User.objects.filter(role='CUSTOMER').prefetch_related('accounts', 'kyc_verification')
 
     def get_serializer_class(self):
         if self.request.method in ['PUT', 'PATCH']:
@@ -189,6 +246,13 @@ def admin_reset_password(request, customer_id):
 
     user.set_password(new_password)
     user.save()
+
+    Notification.objects.create(
+        user=user,
+        notification_type='PASSWORD_RESET',
+        title='Password Reset',
+        message='Your password has been reset by an administrator.'
+    )
 
     AuditLog.objects.create(
         admin=request.user,

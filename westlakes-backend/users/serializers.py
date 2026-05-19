@@ -1,15 +1,23 @@
 from django.conf import settings
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import User
+from .models import User, KYCVerification
 from accounts.models import BankAccount
 
 
 class UserSerializer(serializers.ModelSerializer):
+    kyc_status = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['id', 'full_name', 'email', 'phone_number', 'national_id', 'role', 'is_verified', 'is_active', 'created_at']
+        fields = ['id', 'full_name', 'email', 'phone_number', 'national_id', 'role', 'is_verified', 'is_active', 'created_at', 'kyc_status']
         read_only_fields = ['id', 'is_verified', 'is_active', 'created_at']
+
+    def get_kyc_status(self, obj):
+        try:
+            return obj.kyc_verification.get_status_display()
+        except KYCVerification.DoesNotExist:
+            return 'Not Started'
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -86,6 +94,17 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         fields = ['full_name', 'phone_number']
 
 
+class TransactionPinSerializer(serializers.Serializer):
+    pin = serializers.CharField(min_length=4, max_length=6)
+    password = serializers.CharField()
+
+    def validate(self, attrs):
+        user = self.context['request'].user
+        if not user.check_password(attrs['password']):
+            raise serializers.ValidationError('Invalid password')
+        return attrs
+
+
 class BankAccountBriefSerializer(serializers.ModelSerializer):
     class Meta:
         model = BankAccount
@@ -96,13 +115,16 @@ class CustomerAdminSerializer(serializers.ModelSerializer):
     accounts = BankAccountBriefSerializer(many=True, read_only=True)
     total_balance = serializers.SerializerMethodField()
     primary_account = serializers.SerializerMethodField()
+    kyc_status = serializers.SerializerMethodField()
+    kyc_status_code = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'full_name', 'email', 'phone_number', 'national_id',
             'role', 'is_verified', 'is_active', 'created_at',
-            'accounts', 'total_balance', 'primary_account'
+            'accounts', 'total_balance', 'primary_account',
+            'kyc_status', 'kyc_status_code'
         ]
         read_only_fields = ['id', 'role', 'created_at']
 
@@ -114,3 +136,15 @@ class CustomerAdminSerializer(serializers.ModelSerializer):
         if account:
             return BankAccountBriefSerializer(account).data
         return None
+
+    def get_kyc_status(self, obj):
+        try:
+            return obj.kyc_verification.get_status_display()
+        except KYCVerification.DoesNotExist:
+            return 'Not Started'
+
+    def get_kyc_status_code(self, obj):
+        try:
+            return obj.kyc_verification.status
+        except KYCVerification.DoesNotExist:
+            return 'NOT_STARTED'

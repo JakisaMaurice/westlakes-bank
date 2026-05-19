@@ -12,19 +12,19 @@ class BankAccount(models.Model):
     ]
 
     STATUS_CHOICES = [
-        ('PENDING', 'Pending'),
+        ('PENDING_VERIFICATION', 'Pending Verification'),
         ('ACTIVE', 'Active'),
         ('SUSPENDED', 'Suspended'),
-        ('REJECTED', 'Rejected'),
         ('FROZEN', 'Frozen'),
         ('LOCKED', 'Locked'),
+        ('REJECTED', 'Rejected'),
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='accounts')
     account_number = models.CharField(max_length=20, unique=True, blank=True)
     account_type = models.CharField(max_length=10, choices=ACCOUNT_TYPE_CHOICES, default='SAVINGS')
     balance = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING_VERIFICATION')
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
@@ -47,7 +47,7 @@ class BankAccount(models.Model):
 
     @property
     def is_pending(self):
-        return self.status == 'PENDING'
+        return self.status == 'PENDING_VERIFICATION'
 
     @property
     def is_suspended(self):
@@ -60,3 +60,7 @@ class BankAccount(models.Model):
     @property
     def is_locked(self):
         return self.status == 'LOCKED'
+
+    @property
+    def can_transact(self):
+        return self.status == 'ACTIVE'

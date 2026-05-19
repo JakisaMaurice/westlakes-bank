@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'reports',
     'audit_logs',
     'messaging',
+    'kyc',
 ]
 
 MIDDLEWARE = [

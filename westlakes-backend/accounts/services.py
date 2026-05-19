@@ -17,7 +17,7 @@ class AccountService:
 
     @staticmethod
     def approve_account(account, admin=None):
-        if account.status == 'PENDING':
+        if account.status == 'PENDING_VERIFICATION':
             previous = {'status': account.status}
             account.status = 'ACTIVE'
             account.save()
@@ -25,6 +25,7 @@ class AccountService:
 
             Notification.objects.create(
                 user=account.user,
+                notification_type='ACCOUNT_APPROVED',
                 title='Account Approved',
                 message=f'Your {account.account_type} account ({account.account_number}) has been approved and is now active.'
             )
@@ -40,7 +41,7 @@ class AccountService:
 
     @staticmethod
     def reject_account(account, reason="", admin=None):
-        if account.status == 'PENDING':
+        if account.status == 'PENDING_VERIFICATION':
             previous = {'status': account.status}
             account.status = 'REJECTED'
             account.save()
@@ -52,6 +53,7 @@ class AccountService:
 
             Notification.objects.create(
                 user=account.user,
+                notification_type='ACCOUNT_REJECTED',
                 title='Account Rejected',
                 message=message
             )
@@ -80,6 +82,7 @@ class AccountService:
 
             Notification.objects.create(
                 user=account.user,
+                notification_type='ACCOUNT_SUSPENDED',
                 title='Account Suspended',
                 message=message
             )
@@ -104,6 +107,7 @@ class AccountService:
 
             Notification.objects.create(
                 user=account.user,
+                notification_type='ACCOUNT_APPROVED',
                 title='Account Reactivated',
                 message=f'Your account ({account.account_number}) has been reactivated.'
             )
@@ -131,6 +135,7 @@ class AccountService:
 
             Notification.objects.create(
                 user=account.user,
+                notification_type='ACCOUNT_FROZEN',
                 title='Account Frozen',
                 message=message
             )
@@ -159,6 +164,7 @@ class AccountService:
 
             Notification.objects.create(
                 user=account.user,
+                notification_type='ACCOUNT_FROZEN',
                 title='Account Locked',
                 message=message
             )
@@ -183,6 +189,7 @@ class AccountService:
 
             Notification.objects.create(
                 user=account.user,
+                notification_type='ACCOUNT_APPROVED',
                 title='Account Unlocked',
                 message=f'Your account ({account.account_number}) has been unlocked.'
             )

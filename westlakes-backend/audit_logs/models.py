@@ -20,10 +20,15 @@ class AuditLog(models.Model):
         ('DEPOSIT_MADE', 'Deposit Made'),
         ('WITHDRAWAL_MADE', 'Withdrawal Made'),
         ('TRANSFER_MADE', 'Transfer Made'),
+        ('TRANSFER_REVERSED', 'Transfer Reversed'),
         ('MESSAGE_SENT', 'Message Sent'),
         ('PROFILE_UPDATED', 'Profile Updated'),
         ('DOCUMENT_UPLOADED', 'Document Uploaded'),
+        ('KYC_SUBMITTED', 'KYC Submitted'),
+        ('KYC_APPROVED', 'KYC Approved'),
+        ('KYC_REJECTED', 'KYC Rejected'),
         ('SETTINGS_CHANGED', 'Settings Changed'),
+        ('TRANSACTION_PIN_SET', 'Transaction PIN Set'),
     ]
 
     admin = models.ForeignKey(
