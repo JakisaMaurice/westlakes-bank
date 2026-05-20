@@ -49,9 +49,11 @@ export default function AdminVerificationManagement() {
     }
   }
 
+  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
   useEffect(() => {
     fetchVerifications()
   }, [search, statusFilter])
+  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
   const handleApprove = async () => {
     if (!selectedKYC) return
@@ -257,36 +259,42 @@ export default function AdminVerificationManagement() {
               )}
 
               <div>
-                <h4 className="mb-3 font-medium text-slate-900">Uploaded Documents</h4>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <h4 className="mb-3 font-medium text-slate-900">Uploaded Documents ({selectedKYC.documents.length})</h4>
+                <div className="space-y-2">
                   {selectedKYC.documents.map((doc) => (
                     <div
                       key={doc.id}
-                      className="flex items-center gap-3 rounded-lg border border-slate-200 p-3"
+                      className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5 hover:bg-slate-50 transition"
                     >
                       {doc.mime_type.startsWith("image/") ? (
-                        <Image className="h-8 w-8 text-blue-500" />
+                        <Image className="h-5 w-5 text-blue-500 shrink-0" />
                       ) : (
-                        <FileText className="h-8 w-8 text-red-500" />
+                        <FileText className="h-5 w-5 text-red-500 shrink-0" />
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-slate-900 truncate">
                           {doc.document_type_display}
                         </p>
-                        <p className="text-xs text-slate-500 truncate">{doc.original_filename}</p>
+                        <p className="text-xs text-slate-500 truncate">
+                          {doc.original_filename} · {(doc.file_size / 1024).toFixed(0)} KB
+                        </p>
                       </div>
                       {doc.file_url && (
                         <a
                           href={doc.file_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-700"
+                          className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-3 w-3" />
+                          View
                         </a>
                       )}
                     </div>
                   ))}
+                  {selectedKYC.documents.length === 0 && (
+                    <p className="text-sm text-slate-500 text-center py-4">No documents uploaded yet</p>
+                  )}
                 </div>
               </div>
 

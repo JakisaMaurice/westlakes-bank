@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from "react"
+import { useState, useEffect, useCallback, type FormEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { api } from "@/lib/api"
-import { Loader2, CheckCircle, AlertCircle, ArrowRight } from "lucide-react"
+import { Loader2, CheckCircle, AlertCircle, ArrowRight, Search, Clock, XCircle, CheckCheck } from "lucide-react"
 
 interface Account {
   id: number
@@ -29,6 +29,26 @@ interface TransferReceipt {
   timestamp: string
 }
 
+interface TransferHistoryItem {
+  id: number
+  transaction_reference: string
+  amount: string
+  fee: string
+  status: string
+  timestamp: string
+  description: string
+  sender_account_number: string
+  receiver_account_number: string
+  receiver_name: string
+}
+
+const statusConfig: Record<string, { color: string; bg: string; label: string }> = {
+  PENDING: { color: "text-amber-700", bg: "bg-amber-50", label: "Pending" },
+  SUCCESSFUL: { color: "text-green-700", bg: "bg-green-50", label: "Successful" },
+  FAILED: { color: "text-red-700", bg: "bg-red-50", label: "Failed" },
+  REVERSED: { color: "text-slate-700", bg: "bg-slate-100", label: "Reversed" },
+}
+
 export default function Transfers() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
@@ -37,29 +57,67 @@ export default function Transfers() {
   const [amount, setAmount] = useState("")
   const [description, setDescription] = useState("")
   const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
   const [validating, setValidating] = useState(false)
   const [showPinModal, setShowPinModal] = useState(false)
   const [transactionPin, setTransactionPin] = useState("")
   const [pinError, setPinError] = useState("")
   const [receipt, setReceipt] = useState<TransferReceipt | null>(null)
   const [showReceipt, setShowReceipt] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  // Transfer history state
+  const [transfers, setTransfers] = useState<TransferHistoryItem[]>([])
+  const [transfersLoading, setTransfersLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalTransfers, setTotalTransfers] = useState(0)
+  const pageSize = 10
+
+  const fetchAccounts = useCallback(async () => {
+    try {
+      const response = await api.get<Account[]>("/api/accounts/")
+      const active = response.data.filter((a) => a.status === "ACTIVE")
+      setAccounts(active)
+      if (active.length > 0 && !selectedAccount) {
+        setSelectedAccount(active[0])
+      }
+    } catch (err) {
+      console.error("Failed to fetch accounts:", err)
+    }
+  }, [selectedAccount])
+
+  const fetchTransfers = useCallback(async () => {
+    setTransfersLoading(true)
+    try {
+      const params = new URLSearchParams()
+      params.set("type", "TRANSFER")
+      params.set("page", String(currentPage))
+      params.set("page_size", String(pageSize))
+      if (searchQuery) params.set("search", searchQuery)
+      if (statusFilter) params.set("status", statusFilter)
+      const response = await api.get<{ results: TransferHistoryItem[]; count: number } | TransferHistoryItem[]>(`/api/transactions/?${params.toString()}`)
+      if (Array.isArray(response.data)) {
+        setTransfers(response.data)
+        setTotalTransfers(response.data.length)
+      } else {
+        setTransfers(response.data.results)
+        setTotalTransfers(response.data.count)
+      }
+    } catch (err) {
+      console.error("Failed to fetch transfers:", err)
+    } finally {
+      setTransfersLoading(false)
+    }
+  }, [currentPage, searchQuery, statusFilter])
 
   useEffect(() => {
     fetchAccounts()
   }, [])
 
-  const fetchAccounts = async () => {
-    try {
-      const response = await api.get<Account[]>("/api/accounts/")
-      setAccounts(response.data.filter((a) => a.status === "ACTIVE"))
-      if (response.data.length > 0) {
-        setSelectedAccount(response.data.find((a) => a.status === "ACTIVE") || null)
-      }
-    } catch (err) {
-      console.error("Failed to fetch accounts:", err)
-    }
-  }
+  useEffect(() => {
+    fetchTransfers()
+  }, [fetchTransfers])
 
   const validateAccount = async (accountNumber: string) => {
     if (!accountNumber || accountNumber.length < 10) {
@@ -76,7 +134,7 @@ export default function Transfers() {
       } else {
         setReceiverName("")
       }
-    } catch (err) {
+    } catch {
       setReceiverName("")
     } finally {
       setValidating(false)
@@ -127,6 +185,7 @@ export default function Transfers() {
 
     try {
       const response = await api.post("/api/transactions/transfer/", {
+        sender_account_id: selectedAccount?.id,
         receiver_account_number: receiverAccount,
         amount: parseFloat(amount),
         description,
@@ -150,6 +209,7 @@ export default function Transfers() {
       setDescription("")
       setTransactionPin("")
       fetchAccounts()
+      fetchTransfers()
     } catch (err: any) {
       const errorMsg = err.response?.data?.error || "Transfer failed"
       if (errorMsg.includes("PIN")) {
@@ -173,6 +233,7 @@ export default function Transfers() {
 
   const fee = calculateFee(amount)
   const totalCost = (parseFloat(amount) || 0) + fee
+  const totalPages = Math.ceil(totalTransfers / pageSize)
 
   return (
     <div className="space-y-8">
@@ -197,6 +258,7 @@ export default function Transfers() {
                 }}
                 className="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm"
               >
+                {accounts.length === 0 && <option value="">No active accounts</option>}
                 {accounts.map((account) => (
                   <option key={account.id} value={account.id}>
                     {account.account_number} - {account.account_type} (£{parseFloat(account.balance).toLocaleString("en-GB", { minimumFractionDigits: 2 })})
@@ -279,17 +341,10 @@ export default function Transfers() {
               </div>
             )}
 
-            {success && (
-              <div className="flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-700">
-                <CheckCircle className="h-4 w-4" />
-                {success}
-              </div>
-            )}
-
             <Button
               type="submit"
               className="w-full rounded-lg bg-slate-950 py-3 text-white hover:bg-slate-800"
-              disabled={loading}
+              disabled={loading || accounts.length === 0}
             >
               Continue to Confirmation
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -352,6 +407,131 @@ export default function Transfers() {
         </div>
       </div>
 
+      {/* Transfer History */}
+      <div className="space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-lg font-semibold text-slate-900">Transfer History</h2>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                placeholder="Search transfers..."
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }}
+                className="pl-10 w-48"
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1) }}
+              className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            >
+              <option value="">All Status</option>
+              <option value="PENDING">Pending</option>
+              <option value="SUCCESSFUL">Successful</option>
+              <option value="FAILED">Failed</option>
+              <option value="REVERSED">Reversed</option>
+            </select>
+          </div>
+        </div>
+
+        {transfersLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          </div>
+        ) : transfers.length === 0 ? (
+          <div className="rounded-xl border border-slate-200 bg-white py-12 text-center">
+            <p className="text-slate-500">No transfers found</p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Reference</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">From</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">To</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Amount</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {transfers.map((transfer) => {
+                    const config = statusConfig[transfer.status] || statusConfig.PENDING
+                    return (
+                      <tr key={transfer.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3">
+                          <p className="font-mono text-xs text-slate-600">{transfer.transaction_reference}</p>
+                          {transfer.description && (
+                            <p className="mt-0.5 text-xs text-slate-400 truncate max-w-[150px]">{transfer.description}</p>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="font-mono text-xs text-slate-600">{transfer.sender_account_number || "—"}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="font-mono text-xs text-slate-600">{transfer.receiver_account_number || "—"}</p>
+                          {transfer.receiver_name && (
+                            <p className="text-xs text-slate-400">{transfer.receiver_name}</p>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-sm font-medium text-slate-900">£{parseFloat(transfer.amount).toFixed(2)}</p>
+                          {parseFloat(transfer.fee) > 0 && (
+                            <p className="text-xs text-slate-400">fee: £{parseFloat(transfer.fee).toFixed(2)}</p>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${config.color} ${config.bg}`}>
+                            {transfer.status === "PENDING" && <Clock className="h-3 w-3" />}
+                            {transfer.status === "SUCCESSFUL" && <CheckCheck className="h-3 w-3" />}
+                            {transfer.status === "FAILED" && <XCircle className="h-3 w-3" />}
+                            {config.label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-xs text-slate-600">{new Date(transfer.timestamp).toLocaleDateString()}</p>
+                          <p className="text-xs text-slate-400">{new Date(transfer.timestamp).toLocaleTimeString()}</p>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3">
+                <p className="text-sm text-slate-500">
+                  Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalTransfers)} of {totalTransfers}
+                </p>
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage((p) => p - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage((p) => p + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* PIN Confirmation Modal */}
       <Dialog open={showPinModal} onOpenChange={setShowPinModal}>
         <DialogContent>
@@ -365,9 +545,19 @@ export default function Transfers() {
                 <span className="font-medium">£{parseFloat(amount || "0").toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
+                <span className="text-slate-600">Fee</span>
+                <span className="font-medium">£{fee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
                 <span className="text-slate-600">To</span>
                 <span className="font-medium">{receiverAccount}</span>
               </div>
+              {receiverName && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600">Recipient</span>
+                  <span className="font-medium">{receiverName}</span>
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">

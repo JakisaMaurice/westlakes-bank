@@ -1,5 +1,5 @@
 import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card"
-import { MessageSquare } from "lucide-react"
+// import { MessageSquare } from "lucide-react"
 
 interface TicketRow {
   id: string
@@ -29,7 +29,7 @@ export function TicketPanel({ tickets }: TicketPanelProps) {
             <CardDescription className="text-xs text-slate-500">Track service requests and support queues at a glance.</CardDescription>
           </div>
           <div className="inline-flex items-center gap-1.5 rounded-full bg-[#E6EEFF] px-2.5 py-1 text-[10px] font-semibold text-[#0A3D91]">
-            <MessageSquare className="size-3.5" /> 4 active tickets
+            {/* <MessageSquare className="size-3.5" /> 4 active tickets */}
           </div>
         </div>
         <div className="grid gap-2">

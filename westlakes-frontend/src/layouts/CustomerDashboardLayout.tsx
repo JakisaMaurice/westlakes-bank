@@ -1,33 +1,53 @@
 import { Outlet, useNavigate } from "react-router-dom"
-import { Home, Wallet, TrendingUp, ArrowRightCircle, MessageSquare, Bell, User, Menu } from "lucide-react"
+import { Home, Wallet, TrendingUp, ArrowRightCircle, MessageSquare, Bell, User, Menu, ShieldCheck, Mail, CreditCard } from "lucide-react"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
-import { useAuth } from "@/lib/auth"
+import { useAuth } from "@/lib/useAuth"
 import { DashboardSidebar } from "@/components/dashboard/Sidebar"
 import { TopNavbar } from "@/components/dashboard/TopNavbar"
-
-const customerNav = [
-  { label: "Dashboard Overview", to: "", icon: Home },
-  { label: "Accounts", to: "accounts", icon: Wallet },
-  { label: "Transactions", to: "transactions", icon: TrendingUp },
-  { label: "Transfers", to: "transfers", icon: ArrowRightCircle },
-  { label: "Support Tickets", to: "tickets", icon: MessageSquare },
-  { label: "Notifications", to: "notifications", icon: Bell },
-  { label: "Profile", to: "profile", icon: User },
-]
+import kycService from "@/services/kycService"
+import { useEffect, useState } from "react"
 
 export default function CustomerDashboardLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [needsKYC, setNeedsKYC] = useState(true)
+
+  useEffect(() => {
+    const checkKYC = async () => {
+      try {
+        const res = await kycService.getMyKYC()
+        setNeedsKYC(res.data.status !== "APPROVED")
+      } catch {
+        setNeedsKYC(true)
+      }
+    }
+    checkKYC()
+  }, [])
 
   function handleLogout() {
     logout()
     navigate("/login")
   }
 
+  const customerNav = [
+    { label: "Dashboard Overview", to: "", icon: Home },
+    ...(needsKYC
+      ? [{ label: "Verify Identity", to: "verify", icon: ShieldCheck }]
+      : []),
+    { label: "Accounts", to: "accounts", icon: Wallet },
+    { label: "Transactions", to: "transactions", icon: TrendingUp },
+    { label: "Transfers", to: "transfers", icon: ArrowRightCircle },
+    { label: "ATM Cards", to: "cards", icon: CreditCard },
+    { label: "Support Tickets", to: "tickets", icon: MessageSquare },
+    { label: "Messages", to: "messages", icon: Mail },
+    { label: "Notifications", to: "notifications", icon: Bell },
+    { label: "Profile", to: "profile", icon: User },
+  ]
+
   return (
     <div className="min-h-screen bg-[#F5F7FA] text-[#1E293B]">
       <div className="hidden lg:block">
-        <div className="fixed left-0 top-0 h-screen w-64 border-r border-slate-200/10 bg-transparent">
+        <div className="fixed left-0 top-0 h-screen w-48 border-r border-slate-200/10 bg-transparent">
           <DashboardSidebar items={customerNav} userName={user?.full_name ?? "Customer"} roleLabel="Customer portal" onLogout={handleLogout} />
         </div>
       </div>
@@ -56,7 +76,7 @@ export default function CustomerDashboardLayout() {
         </div>
       </div>
 
-      <main className="lg:ml-64 min-h-screen overflow-y-auto px-5 py-4">
+      <main className="lg:ml-48 min-h-screen overflow-y-auto px-5 py-4">
         <TopNavbar title="Customer dashboard" subtitle="Digital banking made premium." />
         <div className="mt-4">
           <Outlet />

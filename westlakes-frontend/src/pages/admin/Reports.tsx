@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card"
+
 import { AnalyticsChart } from "@/components/dashboard/AnalyticsChart"
 import { api } from "@/lib/api"
 import { Loader2, Users, TrendingUp, ArrowDownLeft, ArrowUpRight } from "lucide-react"

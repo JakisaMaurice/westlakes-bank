@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -33,6 +34,7 @@ const statusConfig: Record<string, { color: string; label: string }> = {
 }
 
 export default function CustomerManagement() {
+  const navigate = useNavigate()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -252,7 +254,7 @@ export default function CustomerManagement() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => window.open(`/admin/customers/${customer.id}`, "_self")}
+                            onClick={() => navigate(`/admin/customers/${customer.id}`)}
                             className="text-blue-600 hover:text-blue-700"
                           >
                             <Eye className="h-4 w-4" />

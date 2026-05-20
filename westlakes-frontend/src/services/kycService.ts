@@ -69,8 +69,8 @@ const kycService = {
     })
   },
 
-  submitKYC: (documents: { document_type: string; file: File }[]) => {
-    return api.post<KYCVerification>("/api/kyc/submit/", { documents })
+  submitKYC: () => {
+    return api.post<KYCVerification>("/api/kyc/submit/", {})
   },
 
   deleteDocument: (documentId: number) => {

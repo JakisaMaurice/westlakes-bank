@@ -20,7 +20,7 @@ const notificationIcons: Record<string, string> = {
   DEPOSIT: "💰",
   TRANSFER_SENT: "📤",
   TRANSFER_RECEIVED: "📥",
-  ACCCOUNT_SUSPENDED: "⚠️",
+  ACCOUNT_SUSPENDED: "⚠️",
   ACCOUNT_FROZEN: "❄️",
   PASSWORD_RESET: "🔑",
   KYC_REMINDER: "📋",

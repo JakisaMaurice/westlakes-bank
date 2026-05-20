@@ -21,6 +21,8 @@ import {
   AlertTriangle,
   UserCheck,
   KeyRound,
+  ChevronDown,
+  Wallet,
 } from "lucide-react"
 import customerService, {
   type Customer,
@@ -29,14 +31,19 @@ import customerService, {
   type Message,
 } from "@/services/customerService"
 import { StatusBadge, Skeleton, EmptyState, Modal, ConfirmModal } from "@/components/admin/AdminUI"
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { api } from "@/lib/api"
 
-type Tab = "overview" | "transactions" | "deposits" | "messages" | "audit"
+type Tab = "overview" | "transactions" | "deposits" | "messages" | "audit" | "cards"
 
 const TABS: { key: Tab; label: string; icon: typeof FileText }[] = [
   { key: "overview", label: "Overview", icon: FileText },
   { key: "transactions", label: "Transactions", icon: CreditCard },
   { key: "deposits", label: "Deposits", icon: DollarSign },
+  { key: "cards", label: "ATM Cards", icon: CreditCard },
   { key: "messages", label: "Messages", icon: MessageSquare },
   { key: "audit", label: "Audit Logs", icon: Clock },
 ]
@@ -88,16 +95,28 @@ export default function CustomerDetail() {
   const [newPassword, setNewPassword] = useState("")
   const [resetLoading, setResetLoading] = useState(false)
 
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null)
+  const [showAccountDropdown, setShowAccountDropdown] = useState(false)
+
+  const [selectedCardAccountId, setSelectedCardAccountId] = useState<number | null>(null)
+  const [showBlockModal, setShowBlockModal] = useState(false)
+  const [blockReason, setBlockReason] = useState("")
+  const [processing, setProcessing] = useState(false)
+
   const fetchCustomer = useCallback(async () => {
     setLoading(true)
     try {
       const res = await customerService.getCustomer(customerId)
       setCustomer(res.data)
+      if (res.data.accounts.length > 0 && !selectedAccountId) {
+        setSelectedAccountId(res.data.primary_account?.id ?? res.data.accounts[0].id)
+      }
     } catch {
       toast.error("Failed to load customer")
     } finally {
       setLoading(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerId])
 
   const fetchTransactions = useCallback(async () => {
@@ -159,14 +178,14 @@ export default function CustomerDetail() {
   }
 
   const handleDeposit = async () => {
-    if (!customer?.primary_account || !depositAmount || parseFloat(depositAmount) <= 0) {
+    if (!viewingAccount || !depositAmount || parseFloat(depositAmount) <= 0) {
       toast.error("Please enter a valid amount")
       return
     }
     setDepositLoading(true)
     try {
       await customerService.adminDeposit({
-        receiver_account_number: customer.primary_account.account_number,
+        receiver_account_number: viewingAccount.account_number,
         amount: depositAmount,
         description: depositNote || "Admin deposit",
       })
@@ -274,6 +293,49 @@ export default function CustomerDetail() {
     }
   }
 
+  const handleIssueCard = async (accountId: number) => {
+    setProcessing(true)
+    try {
+      await api.post(`/api/accounts/${accountId}/atm-card/issue/`)
+      toast.success("ATM card issued successfully")
+      fetchCustomer()
+    } catch (err: { response?: { data?: { error?: string } } }) {
+      toast.error(err?.response?.data?.error || "Failed to issue card")
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const handleBlockCard = async () => {
+    if (!selectedCardAccountId || !blockReason.trim()) return
+    setProcessing(true)
+    try {
+      await api.post(`/api/accounts/${selectedCardAccountId}/atm-card/block/`, { reason: blockReason })
+      toast.success("Card blocked")
+      setShowBlockModal(false)
+      setBlockReason("")
+      setSelectedCardAccountId(null)
+      fetchCustomer()
+    } catch (err: { response?: { data?: { error?: string } } }) {
+      toast.error(err?.response?.data?.error || "Failed to block card")
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const handleUnblockCard = async (accountId: number) => {
+    setProcessing(true)
+    try {
+      await api.post(`/api/accounts/${accountId}/atm-card/unblock/`)
+      toast.success("Card unblocked")
+      fetchCustomer()
+    } catch (err: { response?: { data?: { error?: string } } }) {
+      toast.error(err?.response?.data?.error || "Failed to unblock card")
+    } finally {
+      setProcessing(false)
+    }
+  }
+
   const exportTransactionsCSV = () => {
     if (transactions.length === 0) return
     const headers = ["Date", "Reference", "Type", "Amount", "Status", "Description"]
@@ -324,6 +386,9 @@ export default function CustomerDetail() {
   }
 
   const primaryAccount = customer.primary_account
+  const viewingAccount = selectedAccountId
+    ? customer.accounts.find((a) => a.id === selectedAccountId) || primaryAccount
+    : primaryAccount
 
   return (
     <div className="space-y-6">
@@ -406,32 +471,84 @@ export default function CustomerDetail() {
         </div>
       </div>
 
+      {customer.accounts.length > 1 && (
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-400">Viewing Account</p>
+          <div className="relative">
+            <button
+              onClick={() => setShowAccountDropdown(!showAccountDropdown)}
+              className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-left text-sm transition hover:bg-slate-100"
+            >
+              <div className="flex items-center gap-3">
+                <Wallet className="h-4 w-4 text-slate-500" />
+                <div>
+                  <span className="font-mono font-medium text-slate-900">
+                    {customer.accounts.find((a) => a.id === selectedAccountId)?.account_number || "Select account"}
+                  </span>
+                  <span className="ml-2 text-slate-500">
+                    ({customer.accounts.find((a) => a.id === selectedAccountId)?.account_type || "—"})
+                  </span>
+                </div>
+              </div>
+              <ChevronDown className={`h-4 w-4 text-slate-400 transition ${showAccountDropdown ? "rotate-180" : ""}`} />
+            </button>
+            {showAccountDropdown && (
+              <div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+                {customer.accounts.map((account) => (
+                  <button
+                    key={account.id}
+                    onClick={() => {
+                      setSelectedAccountId(account.id)
+                      setShowAccountDropdown(false)
+                    }}
+                    className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-sm transition hover:bg-slate-50 ${
+                      selectedAccountId === account.id ? "bg-blue-50 text-blue-700" : "text-slate-700"
+                    }`}
+                  >
+                    <div>
+                      <span className="font-mono font-medium">{account.account_number}</span>
+                      <span className="ml-2 text-slate-500">({account.account_type})</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium">
+                        ${parseFloat(account.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                      </span>
+                      <StatusBadge status={account.status} />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-4 md:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Account Number</p>
           <p className="mt-1 font-mono text-lg font-semibold text-slate-900">
-            {primaryAccount?.account_number || "—"}
+            {viewingAccount?.account_number || "—"}
           </p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Account Type</p>
           <p className="mt-1 text-lg font-semibold capitalize text-slate-900">
-            {primaryAccount?.account_type.toLowerCase() || "—"}
+            {viewingAccount?.account_type.toLowerCase() || "—"}
           </p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Balance</p>
           <p className="mt-1 text-lg font-semibold text-slate-900">
-            {primaryAccount
-              ? `$${parseFloat(primaryAccount.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}`
+            {viewingAccount
+              ? `$${parseFloat(viewingAccount.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}`
               : "—"}
           </p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Status</p>
           <div className="mt-2">
-            {primaryAccount ? (
-              <StatusBadge status={primaryAccount.status} />
+            {viewingAccount ? (
+              <StatusBadge status={viewingAccount.status} />
             ) : (
               <span className="text-sm text-slate-400">No account</span>
             )}
@@ -439,19 +556,19 @@ export default function CustomerDetail() {
         </div>
       </div>
 
-      {primaryAccount && primaryAccount.status !== "PENDING" && primaryAccount.status !== "REJECTED" && (
+      {viewingAccount && viewingAccount.status !== "PENDING" && viewingAccount.status !== "REJECTED" && (
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-400">Account Controls</p>
           <div className="flex flex-wrap gap-2">
-            {primaryAccount.status === "ACTIVE" && (
+            {viewingAccount.status === "ACTIVE" && (
               <>
                 <button
                   onClick={() =>
                     setConfirmAction({
                       action: "freeze",
-                      accountId: primaryAccount.id,
+                      accountId: viewingAccount.id,
                       title: "Freeze Account",
-                      description: `Are you sure you want to freeze ${customer.full_name}'s account? The customer will not be able to make transactions.`,
+                      description: `Are you sure you want to freeze ${customer.full_name}'s ${viewingAccount.account_type} account (${viewingAccount.account_number})? The customer will not be able to make transactions.`,
                     })
                   }
                   className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 transition hover:bg-blue-100"
@@ -462,9 +579,9 @@ export default function CustomerDetail() {
                   onClick={() =>
                     setConfirmAction({
                       action: "suspend",
-                      accountId: primaryAccount.id,
+                      accountId: viewingAccount.id,
                       title: "Suspend Account",
-                      description: `Are you sure you want to suspend ${customer.full_name}'s account?`,
+                      description: `Are you sure you want to suspend ${customer.full_name}'s ${viewingAccount.account_type} account (${viewingAccount.account_number})?`,
                     })
                   }
                   className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-100"
@@ -475,9 +592,9 @@ export default function CustomerDetail() {
                   onClick={() =>
                     setConfirmAction({
                       action: "lock",
-                      accountId: primaryAccount.id,
+                      accountId: viewingAccount.id,
                       title: "Lock Account",
-                      description: `Are you sure you want to lock ${customer.full_name}'s account?`,
+                      description: `Are you sure you want to lock ${customer.full_name}'s ${viewingAccount.account_type} account (${viewingAccount.account_number})?`,
                     })
                   }
                   className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
@@ -486,15 +603,15 @@ export default function CustomerDetail() {
                 </button>
               </>
             )}
-            {primaryAccount.status === "FROZEN" && (
+            {viewingAccount.status === "FROZEN" && (
               <>
                 <button
                   onClick={() =>
                     setConfirmAction({
                       action: "activate",
-                      accountId: primaryAccount.id,
+                      accountId: viewingAccount.id,
                       title: "Unfreeze Account",
-                      description: `Reactivate ${customer.full_name}'s frozen account?`,
+                      description: `Reactivate ${customer.full_name}'s frozen ${viewingAccount.account_type} account (${viewingAccount.account_number})?`,
                     })
                   }
                   className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100"
@@ -505,9 +622,9 @@ export default function CustomerDetail() {
                   onClick={() =>
                     setConfirmAction({
                       action: "lock",
-                      accountId: primaryAccount.id,
+                      accountId: viewingAccount.id,
                       title: "Lock Account",
-                      description: `Lock ${customer.full_name}'s frozen account?`,
+                      description: `Lock ${customer.full_name}'s frozen ${viewingAccount.account_type} account (${viewingAccount.account_number})?`,
                     })
                   }
                   className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
@@ -516,14 +633,14 @@ export default function CustomerDetail() {
                 </button>
               </>
             )}
-            {primaryAccount.status === "SUSPENDED" && (
+            {viewingAccount.status === "SUSPENDED" && (
               <button
                 onClick={() =>
                   setConfirmAction({
                     action: "activate",
-                    accountId: primaryAccount.id,
+                    accountId: viewingAccount.id,
                     title: "Reactivate Account",
-                    description: `Reactivate ${customer.full_name}'s suspended account?`,
+                    description: `Reactivate ${customer.full_name}'s suspended ${viewingAccount.account_type} account (${viewingAccount.account_number})?`,
                   })
                 }
                 className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100"
@@ -531,14 +648,14 @@ export default function CustomerDetail() {
                 <Unlock className="h-3.5 w-3.5" /> Reactivate
               </button>
             )}
-            {primaryAccount.status === "LOCKED" && (
+            {viewingAccount.status === "LOCKED" && (
               <button
                 onClick={() =>
                   setConfirmAction({
                     action: "unlock",
-                    accountId: primaryAccount.id,
+                    accountId: viewingAccount.id,
                     title: "Unlock Account",
-                    description: `Unlock ${customer.full_name}'s account?`,
+                    description: `Unlock ${customer.full_name}'s ${viewingAccount.account_type} account (${viewingAccount.account_number})?`,
                   })
                 }
                 className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100"
@@ -594,15 +711,15 @@ export default function CustomerDetail() {
                 <h3 className="mb-3 text-sm font-semibold text-slate-900">Banking Information</h3>
                 <div className="space-y-3 rounded-lg border border-slate-100 bg-slate-50/50 p-4">
                   {[
-                    ["Account Number", primaryAccount?.account_number || "—"],
-                    ["Account Type", primaryAccount?.account_type || "—"],
+                    ["Account Number", viewingAccount?.account_number || "—"],
+                    ["Account Type", viewingAccount?.account_type || "—"],
                     [
                       "Balance",
-                      primaryAccount
-                        ? `$${parseFloat(primaryAccount.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}`
+                      viewingAccount
+                        ? `$${parseFloat(viewingAccount.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}`
                         : "—",
                     ],
-                    ["Status", primaryAccount?.status || "—"],
+                    ["Status", viewingAccount?.status || "—"],
                     ["Total Accounts", String(customer.accounts.length)],
                     [
                       "Total Balance",
@@ -612,8 +729,8 @@ export default function CustomerDetail() {
                     <div key={label} className="flex items-center justify-between">
                       <span className="text-sm text-slate-500">{label}</span>
                       <span className="text-sm font-medium text-slate-900">
-                        {label === "Status" && primaryAccount ? (
-                          <StatusBadge status={primaryAccount.status} />
+                        {label === "Status" && viewingAccount ? (
+                          <StatusBadge status={viewingAccount.status} />
                         ) : (
                           value
                         )}
@@ -621,6 +738,37 @@ export default function CustomerDetail() {
                     </div>
                   ))}
                 </div>
+                {customer.accounts.length > 1 && (
+                  <div className="mt-4">
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">All Accounts</h4>
+                    <div className="space-y-2">
+                      {customer.accounts.map((account) => (
+                        <div
+                          key={account.id}
+                          className={`flex items-center justify-between rounded-lg border p-3 text-sm ${
+                            selectedAccountId === account.id
+                              ? "border-blue-200 bg-blue-50/50"
+                              : "border-slate-100 bg-white"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Wallet className="h-4 w-4 text-slate-400" />
+                            <div>
+                              <span className="font-mono text-slate-900">{account.account_number}</span>
+                              <span className="ml-2 text-xs text-slate-500">{account.account_type}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="font-medium text-slate-900">
+                              ${parseFloat(account.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                            </span>
+                            <StatusBadge status={account.status} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -708,13 +856,13 @@ export default function CustomerDetail() {
                 <h3 className="text-sm font-semibold text-slate-900">Deposit Funds</h3>
                 <button
                   onClick={() => setDepositModalOpen(true)}
-                  disabled={!primaryAccount}
+                  disabled={!viewingAccount}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50"
                 >
                   <DollarSign className="h-4 w-4" /> New Deposit
                 </button>
               </div>
-              {!primaryAccount ? (
+              {!viewingAccount ? (
                 <EmptyState
                   title="No account available"
                   description="Customer needs an active account to receive deposits"
@@ -725,18 +873,18 @@ export default function CustomerDetail() {
                     <div>
                       <p className="text-xs text-slate-400">Account</p>
                       <p className="font-mono text-sm font-medium text-slate-900">
-                        {primaryAccount.account_number}
+                        {viewingAccount.account_number}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-400">Current Balance</p>
                       <p className="text-sm font-medium text-slate-900">
-                        ${parseFloat(primaryAccount.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                        ${parseFloat(viewingAccount.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-400">Account Status</p>
-                      <StatusBadge status={primaryAccount.status} />
+                      <StatusBadge status={viewingAccount.status} />
                     </div>
                   </div>
                 </div>
@@ -881,6 +1029,131 @@ export default function CustomerDetail() {
               )}
             </div>
           )}
+
+          {activeTab === "cards" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-slate-900">ATM Cards</h3>
+              </div>
+              {customer.accounts.filter((a) => a.card_status !== "NOT_ISSUED").length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-300 bg-white py-8 text-center">
+                  <CreditCard className="mx-auto h-10 w-10 text-slate-300" />
+                  <p className="mt-2 text-slate-500">No ATM cards issued for this customer</p>
+                  <p className="mt-1 text-xs text-slate-400">Issue a card from the table below</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {customer.accounts.filter((a) => a.card_status !== "NOT_ISSUED").map((account) => {
+                    const statusColors: Record<string, string> = {
+                      PENDING: "bg-amber-100 text-amber-700",
+                      ISSUED: "bg-blue-100 text-blue-700",
+                      ACTIVE: "bg-green-100 text-green-700",
+                      BLOCKED: "bg-red-100 text-red-700",
+                      EXPIRED: "bg-orange-100 text-orange-700",
+                    }
+                    return (
+                      <div key={account.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-mono text-sm font-medium text-slate-900">
+                                {account.card_number
+                                  ? `•••• •••• •••• ${account.card_number.slice(-4)}`
+                                  : "No card number"}
+                              </p>
+                              <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[account.card_status] || "bg-slate-100 text-slate-600"}`}>
+                                {account.card_status_display}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-xs text-slate-500">
+                              Account: {account.account_number} ({account.account_type})
+                            </p>
+                            {account.card_expiry && (
+                              <p className="mt-0.5 text-xs text-slate-400">
+                                Expires: {new Date(account.card_expiry).toLocaleDateString("en-GB", { month: "short", year: "numeric" })}
+                              </p>
+                            )}
+                            {account.card_status === "BLOCKED" && account.card_blocked_reason && (
+                              <p className="mt-1 text-xs text-red-500">Reason: {account.card_blocked_reason}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {account.card_status === "ACTIVE" && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-red-600 border-red-200 hover:bg-red-50"
+                                    onClick={() => {
+                                      setSelectedCardAccountId(account.id)
+                                      setBlockReason("")
+                                      setShowBlockModal(true)
+                                    }}
+                                  >
+                                    <Lock className="mr-1 h-3.5 w-3.5" />
+                                    Block
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">Block this card</TooltipContent>
+                              </Tooltip>
+                            )}
+                            {account.card_status === "BLOCKED" && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-green-600 border-green-200 hover:bg-green-50"
+                                    onClick={() => handleUnblockCard(account.id)}
+                                  >
+                                    <Unlock className="mr-1 h-3.5 w-3.5" />
+                                    Unblock
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">Unblock this card</TooltipContent>
+                              </Tooltip>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Issue card section for accounts without cards */}
+              {customer.accounts.filter((a) => a.card_status === "NOT_ISSUED").length > 0 && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+                  <p className="text-sm font-medium text-amber-800 mb-3">Accounts without cards</p>
+                  <div className="space-y-2">
+                    {customer.accounts.filter((a) => a.card_status === "NOT_ISSUED").map((account) => (
+                      <div key={account.id} className="flex items-center justify-between rounded-lg bg-white border border-amber-200 px-4 py-2.5">
+                        <div>
+                          <p className="font-mono text-sm text-slate-900">{account.account_number}</p>
+                          <p className="text-xs text-slate-500">{account.account_type} · £{parseFloat(account.balance).toLocaleString("en-GB", { minimumFractionDigits: 2 })}</p>
+                        </div>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              onClick={() => handleIssueCard(account.id)}
+                              disabled={processing}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <CreditCard className="mr-1.5 h-3.5 w-3.5" />
+                              Issue Card
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">Issue ATM card for this account</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -895,8 +1168,13 @@ export default function CustomerDetail() {
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">Account</label>
             <p className="font-mono text-sm text-slate-900">
-              {primaryAccount?.account_number || "No account"}
+              {viewingAccount?.account_number || "No account"}
             </p>
+            {viewingAccount && (
+              <p className="mt-1 text-xs text-slate-500">
+                {viewingAccount.account_type} — Balance: ${parseFloat(viewingAccount.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              </p>
+            )}
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">Amount ($)</label>
@@ -1046,6 +1324,39 @@ export default function CustomerDetail() {
           loading={actionLoading}
         />
       )}
+
+      <Modal
+        open={showBlockModal}
+        onClose={() => { setShowBlockModal(false); setBlockReason("") }}
+        title="Block ATM Card"
+        description="Block the ATM card for this account? The customer will not be able to use this card for ATM withdrawals."
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Reason for blocking <span className="text-red-500">*</span>
+            </label>
+            <Textarea
+              value={blockReason}
+              onChange={(e) => setBlockReason(e.target.value)}
+              placeholder="e.g., Suspected fraud, Lost card, Customer request..."
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => { setShowBlockModal(false); setBlockReason("") }}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleBlockCard}
+              disabled={processing || !blockReason.trim()}
+            >
+              {processing ? "Blocking..." : "Block Card"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

@@ -6,7 +6,7 @@ import { LockKeyhole } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { api } from "@/lib/api"
-import { useAuth } from "@/lib/auth"
+import { useAuth } from "@/lib/useAuth"
 
 export default function Login() {
   const navigate = useNavigate()
@@ -27,11 +27,17 @@ export default function Login() {
         password,
       })
 
-      const { user, tokens } = response.data
+      const { user, tokens, kyc_status } = response.data
       login(user, tokens.access, tokens.refresh)
 
       if (user.role === "ADMIN") {
         navigate("/admin", { replace: true })
+        return
+      }
+
+      // Redirect customers to KYC if not approved
+      if (kyc_status && kyc_status !== "APPROVED") {
+        navigate("/dashboard/verify", { replace: true })
         return
       }
 

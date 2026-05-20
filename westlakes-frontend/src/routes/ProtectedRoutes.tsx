@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from "react-router-dom"
-import { useAuth } from "@/lib/auth"
+import { useAuth } from "@/lib/useAuth"
 
 interface ProtectedRoutesProps {
   role: "customer" | "admin"
@@ -12,7 +12,7 @@ export default function ProtectedRoutes({ role }: ProtectedRoutesProps) {
     return <Navigate to="/login" replace />
   }
 
-  if (role === "admin" && user?.role !== "ADMIN") {
+  if (role === "admin" && user?.role !== "ADMIN" && user?.role !== "SUPER_ADMIN") {
     return <Navigate to="/login" replace />
   }
 

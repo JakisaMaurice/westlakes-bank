@@ -1,7 +1,7 @@
 import { Outlet, useNavigate } from "react-router-dom"
-import { LayoutDashboard, Users, ShieldCheck, TrendingUp, MessageSquare, FileText, Menu, UserCheck } from "lucide-react"
+import { LayoutDashboard, Users, ShieldCheck, TrendingUp, MessageSquare, FileText, Menu, UserCheck, Bell, CreditCard, Mail } from "lucide-react"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
-import { useAuth } from "@/lib/auth"
+import { useAuth } from "@/lib/useAuth"
 import { DashboardSidebar } from "@/components/dashboard/Sidebar"
 import { TopNavbar } from "@/components/dashboard/TopNavbar"
 
@@ -12,6 +12,9 @@ const adminNav = [
   { label: "Account Approvals", to: "account-approvals", icon: ShieldCheck },
   { label: "Transactions", to: "transactions", icon: TrendingUp },
   { label: "Support Tickets", to: "tickets", icon: MessageSquare },
+  { label: "ATM Cards", to: "atm-cards", icon: CreditCard },
+  { label: "Messages", to: "messages", icon: Mail },
+  { label: "Notifications", to: "notifications", icon: Bell },
   { label: "Reports", to: "reports", icon: FileText },
 ]
 
@@ -27,7 +30,7 @@ export default function AdminDashboardLayout() {
   return (
     <div className="min-h-screen bg-[#F5F7FA] text-[#1E293B]">
       <div className="hidden lg:block">
-        <div className="fixed left-0 top-0 h-screen w-64 border-r border-slate-200/10 bg-transparent">
+        <div className="fixed left-0 top-0 h-screen w-48 border-r border-slate-200/10 bg-transparent">
           <DashboardSidebar items={adminNav} userName={user?.full_name ?? "Admin"} roleLabel="Admin console" onLogout={handleLogout} />
         </div>
       </div>
@@ -56,7 +59,7 @@ export default function AdminDashboardLayout() {
         </div>
       </div>
 
-      <main className="lg:ml-64 min-h-screen overflow-y-auto px-5 py-4">
+      <main className="lg:ml-48 min-h-screen overflow-y-auto px-5 py-4">
         <TopNavbar title="Admin dashboard" subtitle="Operations, monitoring, and customer oversight." />
         <div className="mt-4">
           <Outlet />

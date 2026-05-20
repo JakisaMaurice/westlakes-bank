@@ -1,10 +1,12 @@
 import { useEffect, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
-import { Loader2, CheckCheck, Bell } from "lucide-react"
+import { Loader2, CheckCheck, Bell, User } from "lucide-react"
 
 interface Notification {
   id: number
+  user: number
+  user_full_name?: string
   notification_type: string
   title: string
   message: string
@@ -42,23 +44,28 @@ const notificationColors: Record<string, string> = {
   GENERAL: "border-slate-200 bg-slate-50/50",
 }
 
-export default function Notifications() {
+export default function AdminNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [filter, setFilter] = useState<"all" | "unread">("all")
 
   const fetchNotifications = useCallback(async () => {
     setLoading(true)
     setError("")
     try {
-      const response = await api.get<Notification[]>("/api/notifications/")
+      const params = new URLSearchParams()
+      if (filter === "unread") {
+        params.set("read_status", "false")
+      }
+      const response = await api.get<Notification[]>(`/api/notifications/?${params.toString()}`)
       setNotifications(Array.isArray(response.data) ? response.data : [])
     } catch {
       setError("Unable to load notifications.")
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [filter])
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -106,17 +113,27 @@ export default function Notifications() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm uppercase tracking-[0.28em] text-amber-500">Notifications</p>
-          <h1 className="mt-3 text-3xl font-semibold text-slate-950">Recent alerts</h1>
+          <h1 className="mt-3 text-3xl font-semibold text-slate-950">System Notifications</h1>
           <p className="mt-1 text-sm text-slate-500">
             {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? "s" : ""}` : "All caught up!"}
           </p>
         </div>
-        {unreadCount > 0 && (
-          <Button className="rounded-full bg-slate-950 px-6 py-3 text-white hover:bg-slate-800" onClick={markAllRead}>
-            <CheckCheck className="mr-2 h-4 w-4" />
-            Mark all read
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as "all" | "unread")}
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+          >
+            <option value="all">All Notifications</option>
+            <option value="unread">Unread Only</option>
+          </select>
+          {unreadCount > 0 && (
+            <Button className="rounded-full bg-slate-900 px-6 py-3 text-white hover:bg-slate-800" onClick={markAllRead}>
+              <CheckCheck className="mr-2 h-4 w-4" />
+              Mark all read
+            </Button>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -133,8 +150,8 @@ export default function Notifications() {
       ) : notifications.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center">
           <Bell className="mx-auto h-12 w-12 text-slate-300" />
-          <p className="mt-4 text-slate-500">No notifications yet</p>
-          <p className="mt-1 text-sm text-slate-400">We'll notify you when something important happens.</p>
+          <p className="mt-4 text-slate-500">No notifications found</p>
+          <p className="mt-1 text-sm text-slate-400">Notifications from customers and system events will appear here.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -157,7 +174,12 @@ export default function Notifications() {
                         <p className={`text-sm ${!item.read_status ? "font-semibold text-slate-900" : "font-medium text-slate-700"}`}>
                           {item.title}
                         </p>
-                        <p className="mt-0.5 text-sm text-slate-600">{item.message}</p>
+                        {item.user_full_name && (
+                          <p className="mt-0.5 text-xs text-slate-500 flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            {item.user_full_name}
+                          </p>
+                        )}
                       </div>
                       {!item.read_status && (
                         <button
@@ -169,6 +191,7 @@ export default function Notifications() {
                         </button>
                       )}
                     </div>
+                    <p className="mt-2 text-sm text-slate-600">{item.message}</p>
                     <p className="mt-2 text-xs text-slate-400">{formatDate(item.created_at)}</p>
                   </div>
                 </div>

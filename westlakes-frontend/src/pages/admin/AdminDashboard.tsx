@@ -166,7 +166,7 @@ export default function AdminDashboard() {
               <h2 className="mt-1 text-sm font-semibold text-[#0F172A]">Revenue and cost trends</h2>
               <p className="mt-1 text-xs text-slate-500">Track approvals, payouts, and operational flow within the banking network.</p>
             </div>
-            <div className="rounded-full bg-[#EAF2FF] px-2.5 py-1 text-xs font-semibold text-[#1E5EFF]">Updated 30 min ago</div>
+            {/* <div className="rounded-full bg-[#EAF2FF] px-2.5 py-1 text-xs font-semibold text-[#1E5EFF]">Updated 30 min ago</div> */}
           </div>
 
           <div className="mt-4">

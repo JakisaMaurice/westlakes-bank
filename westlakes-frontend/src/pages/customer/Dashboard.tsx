@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { api } from "@/lib/api"
-import { Loader2, AlertCircle, CheckCircle, Clock, FileText, ArrowRight } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle, Clock, FileText, ArrowRight, CreditCard, Banknote } from "lucide-react"
 import KYCUpload from "@/components/dashboard/KYCUpload"
 import kycService, { type KYCVerification } from "@/services/kycService"
 
@@ -15,6 +16,7 @@ interface Account {
 }
 
 export default function CustomerDashboard() {
+  const navigate = useNavigate()
   const [accounts, setAccounts] = useState<Account[]>([])
   const [kyc, setKyc] = useState<KYCVerification | null>(null)
   const [loading, setLoading] = useState(true)
@@ -29,16 +31,25 @@ export default function CustomerDashboard() {
       ])
       setAccounts(accountsRes.data)
       setKyc(kycRes.data)
-    } catch (err) {
+    } catch {
       setError("Failed to load dashboard data")
     } finally {
       setLoading(false)
     }
   }
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     fetchData()
   }, [])
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  // Redirect to KYC if not approved
+  useEffect(() => {
+    if (!loading && kyc && kyc.status !== "APPROVED") {
+      navigate("/dashboard/verify", { replace: true })
+    }
+  }, [loading, kyc, navigate])
 
   const totalBalance = accounts.reduce((sum, acc) => sum + parseFloat(acc.balance), 0)
 
@@ -213,17 +224,25 @@ export default function CustomerDashboard() {
                       <p className="font-semibold text-slate-900">
                         £{parseFloat(account.balance).toLocaleString("en-GB", { minimumFractionDigits: 2 })}
                       </p>
-                      <span
-                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                          account.status === "ACTIVE"
-                            ? "bg-green-100 text-green-700"
-                            : account.status === "PENDING_VERIFICATION"
-                            ? "bg-amber-100 text-amber-700"
-                            : "bg-slate-100 text-slate-700"
-                        }`}
-                      >
-                        {account.status.replace("_", " ")}
-                      </span>
+                      <div className="flex items-center gap-2 justify-end mt-1">
+                        <span
+                          className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+                            account.status === "ACTIVE"
+                              ? "bg-green-100 text-green-700"
+                              : account.status === "PENDING_VERIFICATION"
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-slate-100 text-slate-700"
+                          }`}
+                        >
+                          {account.status.replace("_", " ")}
+                        </span>
+                        {account.card_status === "ACTIVE" && account.card_last_four_digits && (
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-blue-100 px-1.5 py-0.5 text-[9px] font-semibold text-blue-700">
+                            <CreditCard className="h-2.5 w-2.5" />
+                            ••{account.card_last_four_digits}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -246,6 +265,15 @@ export default function CustomerDashboard() {
               >
                 <ArrowRight className="mr-2 h-4 w-4" />
                 Send Money
+              </Button>
+              <Button
+                variant="outline"
+                className="justify-start"
+                disabled={needsKYC}
+                onClick={() => (window.location.href = "/dashboard/withdraw")}
+              >
+                <Banknote className="mr-2 h-4 w-4" />
+                ATM Withdrawal
               </Button>
               <Button
                 variant="outline"
