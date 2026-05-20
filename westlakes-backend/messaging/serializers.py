@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import Message
 
@@ -16,6 +17,8 @@ class MessageSerializer(serializers.ModelSerializer):
 
 
 class MessageCreateSerializer(serializers.ModelSerializer):
+    recipient = serializers.PrimaryKeyRelatedField(queryset=get_user_model().objects.all())
+
     class Meta:
         model = Message
         fields = ['recipient', 'message_type', 'subject', 'body']

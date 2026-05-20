@@ -10,12 +10,15 @@ class Notification(models.Model):
         ('VERIFICATION_APPROVED', 'Verification Approved'),
         ('VERIFICATION_REJECTED', 'Verification Rejected'),
         ('DEPOSIT', 'Deposit'),
+        ('WITHDRAWAL', 'Withdrawal'),
         ('TRANSFER_SENT', 'Transfer Sent'),
         ('TRANSFER_RECEIVED', 'Transfer Received'),
         ('ACCOUNT_SUSPENDED', 'Account Suspended'),
         ('ACCOUNT_FROZEN', 'Account Frozen'),
         ('PASSWORD_RESET', 'Password Reset'),
         ('KYC_REMINDER', 'KYC Reminder'),
+        ('CARD_ISSUED', 'Card Issued'),
+        ('CARD_BLOCKED', 'Card Blocked'),
         ('GENERAL', 'General'),
     ]
 

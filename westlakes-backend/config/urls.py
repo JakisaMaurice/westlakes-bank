@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 from .contact_views import contact_message
 
 urlpatterns = [
@@ -15,3 +17,6 @@ urlpatterns = [
     path('api/messages/', include('messaging.urls')),
     path('api/kyc/', include('kyc.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

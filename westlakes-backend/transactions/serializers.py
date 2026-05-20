@@ -1,3 +1,4 @@
+from django.db import models
 from rest_framework import serializers
 from .models import Transaction, Transfer, Deposit
 from accounts.models import BankAccount
@@ -25,19 +26,27 @@ class TransactionSerializer(serializers.ModelSerializer):
 class TransactionCreateSerializer(serializers.ModelSerializer):
     receiver_account_number = serializers.CharField(write_only=True)
     transaction_pin = serializers.CharField(write_only=True, required=False)
+    sender_account_id = serializers.IntegerField(write_only=True, required=False)
 
     class Meta:
         model = Transaction
-        fields = ['receiver_account_number', 'amount', 'description', 'transaction_pin']
+        fields = ['sender_account_id', 'receiver_account_number', 'amount', 'description', 'transaction_pin']
 
     def validate(self, attrs):
         user = self.context['request'].user
         amount = attrs['amount']
 
-        try:
-            sender_account = BankAccount.objects.get(user=user, status='ACTIVE')
-        except BankAccount.DoesNotExist:
-            raise serializers.ValidationError("No active account found")
+        sender_account_id = attrs.get('sender_account_id')
+        if sender_account_id:
+            try:
+                sender_account = BankAccount.objects.get(id=sender_account_id, user=user, status='ACTIVE')
+            except BankAccount.DoesNotExist:
+                raise serializers.ValidationError("No active account found with the specified ID")
+        else:
+            try:
+                sender_account = BankAccount.objects.get(user=user, status='ACTIVE')
+            except BankAccount.DoesNotExist:
+                raise serializers.ValidationError("No active account found")
 
         try:
             receiver_account = BankAccount.objects.get(
@@ -71,6 +80,7 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('receiver_account_number')
         validated_data.pop('transaction_pin', None)
+        validated_data.pop('sender_account_id', None)
         return super().create(validated_data)
 
 
@@ -94,9 +104,12 @@ class DepositSerializer(serializers.ModelSerializer):
 
 
 class WithdrawalSerializer(serializers.ModelSerializer):
+    transaction_pin = serializers.CharField(write_only=True, required=True)
+    atm_pin = serializers.CharField(write_only=True, required=False)
+
     class Meta:
         model = Transaction
-        fields = ['amount', 'description']
+        fields = ['amount', 'description', 'transaction_pin', 'atm_pin']
 
     def validate(self, attrs):
         user = self.context['request'].user
@@ -110,12 +123,119 @@ class WithdrawalSerializer(serializers.ModelSerializer):
         if account.balance < amount:
             raise serializers.ValidationError("Insufficient balance")
 
+        if not user.transaction_pin:
+            raise serializers.ValidationError("Please set a transaction PIN before making withdrawals")
+
+        pin = attrs.get('transaction_pin')
+        if not pin:
+            raise serializers.ValidationError("Transaction PIN is required")
+        if not user.check_transaction_pin(pin):
+            raise serializers.ValidationError("Invalid transaction PIN")
+
+        if amount <= 0:
+            raise serializers.ValidationError("Amount must be positive")
+
+        daily_total = self._get_daily_withdrawal_total(account)
+        if daily_total + amount > account.card_daily_limit:
+            remaining = account.card_daily_limit - daily_total
+            raise serializers.ValidationError(
+                f"Daily withdrawal limit exceeded. Remaining today: £{remaining:.2f}"
+            )
+
         attrs['sender_account'] = account
         attrs['transaction_type'] = 'WITHDRAWAL'
-
         return attrs
 
+    @staticmethod
+    def _get_daily_withdrawal_total(account):
+        from django.utils import timezone
+        from datetime import timedelta
+        from .models import Transaction
+        today = timezone.now().date()
+        total = Transaction.objects.filter(
+            sender_account=account,
+            transaction_type='WITHDRAWAL',
+            status='SUCCESSFUL',
+            timestamp__date=today,
+        ).aggregate(total=models.Sum('amount'))['total']
+        return total or 0
+
     def create(self, validated_data):
+        validated_data.pop('transaction_pin', None)
+        validated_data.pop('atm_pin', None)
+        return super().create(validated_data)
+
+
+class ATMWithdrawalSerializer(serializers.ModelSerializer):
+    atm_pin = serializers.CharField(write_only=True, required=True)
+    card_number = serializers.CharField(write_only=True, required=True)
+
+    class Meta:
+        model = Transaction
+        fields = ['amount', 'description', 'atm_pin', 'card_number']
+
+    def validate(self, attrs):
+        user = self.context['request'].user
+        amount = attrs['amount']
+        card_number = attrs['card_number']
+        atm_pin = attrs.get('atm_pin')
+
+        if not atm_pin or len(atm_pin) != 4:
+            raise serializers.ValidationError("ATM PIN must be 4 digits")
+
+        try:
+            account = BankAccount.objects.get(
+                card_number=card_number,
+                user=user,
+                card_status='ACTIVE',
+                status='ACTIVE',
+            )
+        except BankAccount.DoesNotExist:
+            raise serializers.ValidationError("Invalid or inactive card")
+
+        if not account.check_card_pin(atm_pin):
+            raise serializers.ValidationError("Invalid ATM PIN")
+
+        if account.balance < amount:
+            raise serializers.ValidationError("Insufficient balance")
+
+        if amount <= 0:
+            raise serializers.ValidationError("Amount must be positive")
+
+        if amount > account.card_daily_limit:
+            raise serializers.ValidationError(
+                f"Amount exceeds daily limit of £{account.card_daily_limit:.2f}"
+            )
+
+        daily_total = self._get_daily_atm_total(account)
+        if daily_total + amount > account.card_daily_limit:
+            remaining = account.card_daily_limit - daily_total
+            raise serializers.ValidationError(
+                f"Daily ATM withdrawal limit exceeded. Remaining today: £{remaining:.2f}"
+            )
+
+        attrs['sender_account'] = account
+        attrs['transaction_type'] = 'WITHDRAWAL'
+        return attrs
+
+    @staticmethod
+    def _get_daily_atm_total(account):
+        from django.utils import timezone
+        from .models import Transaction
+        today = timezone.now().date()
+        total = Transaction.objects.filter(
+            sender_account=account,
+            transaction_type='WITHDRAWAL',
+            status='SUCCESSFUL',
+            timestamp__date=today,
+            description__icontains='ATM',
+        ).aggregate(total=models.Sum('amount'))['total']
+        return total or 0
+
+    def create(self, validated_data):
+        validated_data.pop('atm_pin', None)
+        validated_data.pop('card_number', None)
+        validated_data['description'] = f"ATM Withdrawal: {validated_data.get('description', '')}"
         return super().create(validated_data)
 
 

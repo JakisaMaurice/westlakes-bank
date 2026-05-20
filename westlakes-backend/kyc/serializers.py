@@ -55,18 +55,8 @@ class DocumentUploadSerializer(serializers.Serializer):
 
 
 class KYCSubmissionSerializer(serializers.Serializer):
-    documents = DocumentUploadSerializer(many=True)
-
-    def validate_documents(self, value):
-        required_types = {'NATIONAL_ID', 'PASSPORT_PHOTO', 'PROOF_OF_ADDRESS', 'SIGNATURE'}
-        provided_types = {doc['document_type'] for doc in value}
-
-        missing = required_types - provided_types
-        if missing:
-            missing_names = [dict(UploadedDocument.DOCUMENT_TYPE_CHOICES)[t] for t in missing]
-            raise serializers.ValidationError(f'Missing required documents: {", ".join(missing_names)}')
-
-        return value
+    def validate(self, attrs):
+        return attrs
 
 
 class KYCApprovalSerializer(serializers.Serializer):

@@ -5,18 +5,16 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import Notification
 from .serializers import NotificationSerializer, NotificationUpdateSerializer
-from users.permissions import IsCustomer, IsAdmin
 
 
 class NotificationListView(generics.ListAPIView):
     serializer_class = NotificationSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_admin:
-            return Notification.objects.all()
-        return Notification.objects.filter(user=user)
+        return Notification.objects.filter(user=user).order_by('-created_at')
 
 
 class NotificationDetailView(generics.RetrieveUpdateAPIView):
@@ -25,8 +23,6 @@ class NotificationDetailView(generics.RetrieveUpdateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_admin:
-            return Notification.objects.all()
         return Notification.objects.filter(user=user)
 
     def get_serializer_class(self):
@@ -38,7 +34,9 @@ class NotificationDetailView(generics.RetrieveUpdateAPIView):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def mark_notification_read(request, notification_id):
-    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+    notification = get_object_or_404(Notification, id=notification_id)
+    if not request.user.is_admin and notification.user != request.user:
+        return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
     notification.mark_as_read()
     serializer = NotificationSerializer(notification)
     return Response(serializer.data)

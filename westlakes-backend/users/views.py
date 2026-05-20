@@ -15,7 +15,7 @@ from .serializers import (
 from .permissions import IsCustomer, IsAdmin
 from audit_logs.models import AuditLog
 from accounts.models import BankAccount
-from notifications.models import Notification
+from notifications.services import NotificationService
 from users.models import KYCVerification
 
 
@@ -39,12 +39,7 @@ class UserRegistrationView(generics.CreateAPIView):
 
         KYCVerification.objects.create(user=user, status='PENDING_VERIFICATION')
 
-        Notification.objects.create(
-            user=user,
-            notification_type='GENERAL',
-            title='Welcome to Westlakes Bank',
-            message='Please complete your account setup by uploading your KYC documents.'
-        )
+        NotificationService.notify_welcome(user)
 
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
@@ -247,12 +242,7 @@ def admin_reset_password(request, customer_id):
     user.set_password(new_password)
     user.save()
 
-    Notification.objects.create(
-        user=user,
-        notification_type='PASSWORD_RESET',
-        title='Password Reset',
-        message='Your password has been reset by an administrator.'
-    )
+    NotificationService.notify_password_reset(user)
 
     AuditLog.objects.create(
         admin=request.user,
@@ -262,3 +252,12 @@ def admin_reset_password(request, customer_id):
     )
 
     return Response({'message': 'Password reset successfully'})
+
+
+@api_view(['GET'])
+@permission_classes([IsCustomer])
+def get_admin_for_messaging(request):
+    admin = User.objects.filter(role__in=['ADMIN', 'SUPER_ADMIN']).first()
+    if not admin:
+        return Response({'error': 'No admin available'}, status=status.HTTP_404_NOT_FOUND)
+    return Response({'id': admin.id, 'full_name': admin.full_name, 'email': admin.email})

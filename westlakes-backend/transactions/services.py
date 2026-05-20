@@ -1,10 +1,8 @@
 from django.db import transaction as db_transaction
-from django.core.mail import send_mail
-from django.conf import settings
 from django.utils import timezone
 from .models import Transaction, Transfer, Deposit
 from accounts.models import BankAccount
-from notifications.models import Notification
+from notifications.services import NotificationService
 from audit_logs.models import AuditLog
 
 
@@ -41,38 +39,30 @@ class TransactionService:
 
     @staticmethod
     def _create_transaction_notifications(transaction):
-        """
-        Create notifications for transaction participants.
-        """
         if transaction.transaction_type == 'TRANSFER':
-            Notification.objects.create(
+            NotificationService.notify_transfer_sent(
                 user=transaction.sender_account.user,
-                notification_type='TRANSFER_SENT',
-                title='Transfer Sent',
-                message=f'You sent £{transaction.amount} to account {transaction.receiver_account.account_number}'
+                amount=transaction.amount,
+                to_account=transaction.receiver_account.account_number,
+                fee=str(transaction.fee),
             )
-
-            Notification.objects.create(
+            NotificationService.notify_transfer_received(
                 user=transaction.receiver_account.user,
-                notification_type='TRANSFER_RECEIVED',
-                title='Transfer Received',
-                message=f'You received £{transaction.amount} from {transaction.sender_account.user.full_name}'
+                amount=transaction.amount,
+                from_name=transaction.sender_account.user.full_name,
+                from_account=transaction.sender_account.account_number,
             )
-
         elif transaction.transaction_type == 'DEPOSIT':
-            Notification.objects.create(
+            NotificationService.notify_deposit(
                 user=transaction.receiver_account.user,
-                notification_type='DEPOSIT',
-                title='Deposit Successful',
-                message=f'£{transaction.amount} has been deposited to your account'
+                amount=transaction.amount,
+                account_number=transaction.receiver_account.account_number,
             )
-
         elif transaction.transaction_type == 'WITHDRAWAL':
-            Notification.objects.create(
+            NotificationService.notify_withdrawal(
                 user=transaction.sender_account.user,
-                notification_type='TRANSFER_SENT',
-                title='Withdrawal Successful',
-                message=f'£{transaction.amount} has been withdrawn from your account'
+                amount=transaction.amount,
+                account_number=transaction.sender_account.account_number,
             )
 
     @staticmethod
@@ -214,11 +204,11 @@ class TransactionService:
             transaction.status = 'REVERSED'
             transaction.save()
 
-            Notification.objects.create(
+            NotificationService.create_notification(
                 user=transaction.sender_account.user if transaction.sender_account else transaction.receiver_account.user,
                 notification_type='TRANSFER_SENT',
                 title='Transaction Reversed',
-                message=f'Transaction {transaction.transaction_reference} has been reversed. Reason: {reason}'
+                message=f'Transaction {transaction.transaction_reference} has been reversed. Reason: {reason}',
             )
 
             if admin:

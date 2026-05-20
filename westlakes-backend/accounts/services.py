@@ -1,5 +1,5 @@
 from .models import BankAccount
-from notifications.models import Notification
+from notifications.services import NotificationService
 from audit_logs.models import AuditLog
 
 
@@ -23,12 +23,7 @@ class AccountService:
             account.save()
             new = {'status': account.status}
 
-            Notification.objects.create(
-                user=account.user,
-                notification_type='ACCOUNT_APPROVED',
-                title='Account Approved',
-                message=f'Your {account.account_type} account ({account.account_number}) has been approved and is now active.'
-            )
+            NotificationService.notify_account_approved(account)
 
             if admin:
                 AccountService._log_action(
@@ -47,16 +42,7 @@ class AccountService:
             account.save()
             new = {'status': account.status}
 
-            message = f'Your {account.account_type} account application has been rejected.'
-            if reason:
-                message += f' Reason: {reason}'
-
-            Notification.objects.create(
-                user=account.user,
-                notification_type='ACCOUNT_REJECTED',
-                title='Account Rejected',
-                message=message
-            )
+            NotificationService.notify_account_rejected(account, reason=reason)
 
             if admin:
                 AccountService._log_action(
@@ -76,16 +62,7 @@ class AccountService:
             account.save()
             new = {'status': account.status}
 
-            message = f'Your account ({account.account_number}) has been suspended.'
-            if reason:
-                message += f' Reason: {reason}'
-
-            Notification.objects.create(
-                user=account.user,
-                notification_type='ACCOUNT_SUSPENDED',
-                title='Account Suspended',
-                message=message
-            )
+            NotificationService.notify_account_suspended(account, reason=reason)
 
             if admin:
                 AccountService._log_action(
@@ -105,12 +82,7 @@ class AccountService:
             account.save()
             new = {'status': account.status}
 
-            Notification.objects.create(
-                user=account.user,
-                notification_type='ACCOUNT_APPROVED',
-                title='Account Reactivated',
-                message=f'Your account ({account.account_number}) has been reactivated.'
-            )
+            NotificationService.notify_account_reactivated(account)
 
             if admin:
                 AccountService._log_action(
@@ -129,16 +101,7 @@ class AccountService:
             account.save()
             new = {'status': account.status}
 
-            message = f'Your account ({account.account_number}) has been frozen.'
-            if reason:
-                message += f' Reason: {reason}'
-
-            Notification.objects.create(
-                user=account.user,
-                notification_type='ACCOUNT_FROZEN',
-                title='Account Frozen',
-                message=message
-            )
+            NotificationService.notify_account_frozen(account, reason=reason)
 
             if admin:
                 AccountService._log_action(
@@ -158,16 +121,7 @@ class AccountService:
             account.save()
             new = {'status': account.status}
 
-            message = f'Your account ({account.account_number}) has been locked.'
-            if reason:
-                message += f' Reason: {reason}'
-
-            Notification.objects.create(
-                user=account.user,
-                notification_type='ACCOUNT_FROZEN',
-                title='Account Locked',
-                message=message
-            )
+            NotificationService.notify_account_locked(account, reason=reason)
 
             if admin:
                 AccountService._log_action(
@@ -187,12 +141,7 @@ class AccountService:
             account.save()
             new = {'status': account.status}
 
-            Notification.objects.create(
-                user=account.user,
-                notification_type='ACCOUNT_APPROVED',
-                title='Account Unlocked',
-                message=f'Your account ({account.account_number}) has been unlocked.'
-            )
+            NotificationService.notify_account_unlocked(account)
 
             if admin:
                 AccountService._log_action(

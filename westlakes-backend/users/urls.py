@@ -16,4 +16,5 @@ urlpatterns = [
     path('customers/<int:pk>/', views.CustomerDetailView.as_view(), name='customer-detail'),
     path('customers/<int:customer_id>/verify/', views.verify_customer, name='verify-customer'),
     path('customers/<int:customer_id>/reset-password/', views.admin_reset_password, name='admin-reset-password'),
+    path('messaging/admin/', views.get_admin_for_messaging, name='get-admin-messaging'),
 ]

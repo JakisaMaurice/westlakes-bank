@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.db.models import Q
 from .models import Transaction
-from .serializers import TransactionSerializer, TransactionCreateSerializer, DepositSerializer, WithdrawalSerializer, AdminDepositSerializer
+from .serializers import TransactionSerializer, TransactionCreateSerializer, DepositSerializer, WithdrawalSerializer, AdminDepositSerializer, ATMWithdrawalSerializer
 from .services import TransactionService
 from users.permissions import IsCustomer, IsAdmin
 
@@ -148,3 +148,21 @@ def reverse_transaction(request, transaction_id):
         return Response(TransactionSerializer(transaction).data)
     except ValueError as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ATMWithdrawalView(generics.CreateAPIView):
+    serializer_class = ATMWithdrawalSerializer
+    permission_classes = [IsCustomer]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        transaction = serializer.save()
+
+        try:
+            TransactionService.process_transaction(transaction)
+            return Response(TransactionSerializer(transaction).data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            transaction.status = 'FAILED'
+            transaction.save()
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

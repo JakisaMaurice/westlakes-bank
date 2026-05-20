@@ -11,7 +11,7 @@ from .serializers import (
     KYCApprovalSerializer, KYCRejectionSerializer
 )
 from users.permissions import IsCustomer, IsAdmin
-from notifications.models import Notification
+from notifications.services import NotificationService
 from audit_logs.models import AuditLog
 
 
@@ -86,6 +86,19 @@ class SubmitKYCView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        required_types = {'NATIONAL_ID', 'PASSPORT_PHOTO', 'PROOF_OF_ADDRESS', 'SIGNATURE'}
+        uploaded_types = set(
+            UploadedDocument.objects.filter(kyc_verification=kyc)
+            .values_list('document_type', flat=True)
+        )
+        missing = required_types - uploaded_types
+        if missing:
+            missing_names = [dict(UploadedDocument.DOCUMENT_TYPE_CHOICES)[t] for t in missing]
+            return Response(
+                {'error': f'Missing required documents: {", ".join(missing_names)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         with db_transaction.atomic():
             kyc.status = 'PENDING_REVIEW'
             kyc.submitted_at = kyc.submitted_at or __import__('django.utils.timezone').utils.timezone.now()
@@ -97,6 +110,8 @@ class SubmitKYCView(generics.GenericAPIView):
                 action='KYC_SUBMITTED',
                 notes='KYC documents submitted for review'
             )
+
+            NotificationService.notify_admin_new_kyc(request.user)
 
         return Response(
             KYCVerificationSerializer(kyc, context={'request': request}).data
@@ -176,12 +191,7 @@ class AdminApproveKYCView(generics.GenericAPIView):
                 status='PENDING_VERIFICATION'
             ).update(status='ACTIVE')
 
-            Notification.objects.create(
-                user=kyc.user,
-                notification_type='VERIFICATION_APPROVED',
-                title='Verification Approved',
-                message='Your identity verification has been approved. Your account is now active.'
-            )
+            NotificationService.notify_kyc_approved(kyc.user)
 
             AuditLog.objects.create(
                 admin=request.user,
@@ -216,12 +226,7 @@ class AdminRejectKYCView(generics.GenericAPIView):
             kyc.admin_notes = serializer.validated_data.get('admin_notes', '')
             kyc.save()
 
-            Notification.objects.create(
-                user=kyc.user,
-                notification_type='VERIFICATION_REJECTED',
-                title='Verification Rejected',
-                message=f'Your identity verification was rejected. Reason: {kyc.rejection_reason}'
-            )
+            NotificationService.notify_kyc_rejected(kyc.user, reason=kyc.rejection_reason)
 
             AuditLog.objects.create(
                 admin=request.user,
@@ -253,12 +258,7 @@ class AdminRequestChangesKYCView(generics.GenericAPIView):
             kyc.admin_notes = serializer.validated_data.get('admin_notes', '')
             kyc.save()
 
-            Notification.objects.create(
-                user=kyc.user,
-                notification_type='KYC_REMINDER',
-                title='Additional Documents Required',
-                message=f'Please resubmit your documents. Reason: {kyc.rejection_reason}'
-            )
+            NotificationService.notify_kyc_changes_requested(kyc.user, reason=kyc.rejection_reason)
 
             AuditLog.objects.create(
                 admin=request.user,

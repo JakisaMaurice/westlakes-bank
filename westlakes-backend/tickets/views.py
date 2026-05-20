@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import Ticket
 from .serializers import TicketSerializer, TicketCreateSerializer, TicketUpdateSerializer, TicketReplyCreateSerializer
+from notifications.services import NotificationService
 from users.permissions import IsCustomer, IsAdmin, IsSupport
 
 
@@ -23,6 +24,10 @@ class TicketListCreateView(generics.ListCreateAPIView):
         if self.request.method == 'POST':
             return TicketCreateSerializer
         return TicketSerializer
+
+    def perform_create(self, serializer):
+        ticket = serializer.save()
+        NotificationService.notify_ticket_created(ticket)
 
 
 class TicketDetailView(generics.RetrieveUpdateAPIView):
@@ -59,9 +64,14 @@ def respond_to_ticket(request, ticket_id):
     if not response_text:
         return Response({'error': 'Response text is required'}, status=status.HTTP_400_BAD_REQUEST)
 
+    old_status = ticket.status
     ticket.admin_response = response_text
     ticket.status = 'IN_PROGRESS'
     ticket.save()
+
+    NotificationService.notify_ticket_replied(ticket, request.user.full_name, True)
+    if old_status != 'IN_PROGRESS':
+        NotificationService.notify_ticket_status_changed(ticket, old_status, 'IN_PROGRESS')
 
     serializer = TicketSerializer(ticket)
     return Response(serializer.data)
@@ -75,8 +85,11 @@ def close_ticket(request, ticket_id):
     if ticket.status == 'CLOSED':
         return Response({'error': 'Ticket is already closed'}, status=status.HTTP_400_BAD_REQUEST)
 
+    old_status = ticket.status
     ticket.status = 'CLOSED'
     ticket.save()
+
+    NotificationService.notify_ticket_status_changed(ticket, old_status, 'CLOSED')
 
     serializer = TicketSerializer(ticket)
     return Response(serializer.data)
@@ -99,6 +112,7 @@ class TicketReplyView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
 
         is_admin = request.user.is_admin or request.user.role == 'SUPPORT'
+        old_status = ticket.status
         reply = serializer.save(
             ticket=ticket,
             author=request.user,
@@ -110,6 +124,10 @@ class TicketReplyView(generics.CreateAPIView):
         else:
             ticket.status = 'OPEN'
         ticket.save()
+
+        NotificationService.notify_ticket_replied(ticket, request.user.full_name, is_admin)
+        if old_status != ticket.status:
+            NotificationService.notify_ticket_status_changed(ticket, old_status, ticket.status)
 
         from .serializers import TicketReplySerializer
         return Response(TicketReplySerializer(reply).data, status=status.HTTP_201_CREATED)
