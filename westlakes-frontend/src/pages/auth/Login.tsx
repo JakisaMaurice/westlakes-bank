@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react"
 import { Link } from "react-router-dom"
 import { useNavigate } from "react-router-dom"
-import { LockKeyhole } from "lucide-react"
+import { Eye, EyeOff, LockKeyhole } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,6 +13,7 @@ export default function Login() {
   const { login } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -79,14 +80,24 @@ export default function Login() {
               </label>
               <label className="grid gap-2 text-sm font-semibold text-slate-700">
                 Password
-                <Input
-                  className="h-12 rounded-2xl bg-white"
-                  placeholder="Enter password"
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  required
-                />
+                <span className="relative">
+                  <Input
+                    className="h-12 rounded-2xl bg-white pr-12"
+                    placeholder="Enter password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-[#0A3D91]"
+                    onClick={() => setShowPassword((value) => !value)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </span>
               </label>
             </div>
             {error ? <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm font-medium text-red-600">{error}</p> : null}
