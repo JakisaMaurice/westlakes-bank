@@ -299,7 +299,7 @@ export default function CustomerDetail() {
       await api.post(`/api/accounts/${accountId}/atm-card/issue/`)
       toast.success("ATM card issued successfully")
       fetchCustomer()
-    } catch (err: { response?: { data?: { error?: string } } }) {
+    } catch (err: any) {
       toast.error(err?.response?.data?.error || "Failed to issue card")
     } finally {
       setProcessing(false)
@@ -316,7 +316,7 @@ export default function CustomerDetail() {
       setBlockReason("")
       setSelectedCardAccountId(null)
       fetchCustomer()
-    } catch (err: { response?: { data?: { error?: string } } }) {
+    } catch (err: any) {
       toast.error(err?.response?.data?.error || "Failed to block card")
     } finally {
       setProcessing(false)
@@ -329,7 +329,7 @@ export default function CustomerDetail() {
       await api.post(`/api/accounts/${accountId}/atm-card/unblock/`)
       toast.success("Card unblocked")
       fetchCustomer()
-    } catch (err: { response?: { data?: { error?: string } } }) {
+    } catch (err: any) {
       toast.error(err?.response?.data?.error || "Failed to unblock card")
     } finally {
       setProcessing(false)
@@ -1061,7 +1061,7 @@ export default function CustomerDetail() {
                                   ? `•••• •••• •••• ${account.card_number.slice(-4)}`
                                   : "No card number"}
                               </p>
-                              <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[account.card_status] || "bg-slate-100 text-slate-600"}`}>
+                              <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[account.card_status ?? ""] || "bg-slate-100 text-slate-600"}`}>
                                 {account.card_status_display}
                               </span>
                             </div>

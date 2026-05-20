@@ -131,7 +131,7 @@ export default function ATMWithdrawal() {
       setAtmPin("")
       setTransactionPin("")
       fetchAccounts()
-    } catch (err: { response?: { data?: { error?: string } } }) {
+    } catch (err: any) {
       setError(err?.response?.data?.error || "Withdrawal failed")
     } finally {
       setSending(false)

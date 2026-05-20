@@ -11,6 +11,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { api } from "@/lib/api"
 import { Loader2, CheckCircle, AlertCircle, ArrowRight, Search, Clock, XCircle, CheckCheck } from "lucide-react"
+import { toast } from "sonner"
 
 interface Account {
   id: number
@@ -209,6 +210,7 @@ export default function Transfers() {
       setDescription("")
       setTransactionPin("")
       fetchAccounts()
+      toast.success("Transfer confirmation email sent", { description: "A notification has been sent to your email address." })
       fetchTransfers()
     } catch (err: any) {
       const errorMsg = err.response?.data?.error || "Transfer failed"

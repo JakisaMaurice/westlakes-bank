@@ -104,7 +104,7 @@ export default function Messages() {
       setComposeBody("")
       setComposeType("DIRECT")
       fetchMessages()
-    } catch (err: { response?: { data?: { error?: string } } }) {
+    } catch (err: any) {
       setError(err?.response?.data?.error || "Failed to send message.")
     } finally {
       setSending(false)
@@ -289,7 +289,7 @@ export default function Messages() {
                         })
                         setComposeBody("")
                         fetchMessages()
-                      } catch (err: { response?: { data?: { error?: string } } }) {
+                      } catch (err: any) {
                         setError(err?.response?.data?.error || "Failed to send reply.")
                       } finally {
                         setSending(false)

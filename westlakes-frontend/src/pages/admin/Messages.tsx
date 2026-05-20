@@ -97,7 +97,7 @@ export default function AdminMessages() {
       setReplySubject("")
       setShowDetail(false)
       fetchMessages()
-    } catch (err: { response?: { data?: { error?: string } } }) {
+    } catch (err: any) {
       setError(err?.response?.data?.error || "Failed to send reply.")
     } finally {
       setSending(false)

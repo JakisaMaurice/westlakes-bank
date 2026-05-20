@@ -13,6 +13,8 @@ interface Account {
   account_type: string
   balance: string
   status: string
+  card_status?: string
+  card_last_four_digits?: string
 }
 
 export default function CustomerDashboard() {

@@ -35,8 +35,8 @@ export interface ServiceItem extends FeatureItem {
 }
 
 export const brand = {
-  name: "Westlakes Bank",
-  email: "hello@westlakes.bank",
+  name: import.meta.env.VITE_APP_NAME ?? "Westlakes Bank",
+  email: import.meta.env.VITE_CONTACT_EMAIL ?? "hello@westlakes.bank",
   phone: "+1 (212) 555-0184",
   address: "75 Rockefeller Plaza, New York, NY 10019",
 }

@@ -81,7 +81,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: "westlakes-auth",
+      name: `${import.meta.env.VITE_APP_NAME ?? "westlakes"}-auth`,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         user: state.user,

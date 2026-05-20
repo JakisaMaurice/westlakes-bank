@@ -6,6 +6,7 @@ import { BadgeCheck, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { api } from "@/lib/api"
+import { toast } from "sonner"
 
 export default function Register() {
   const navigate = useNavigate()
@@ -51,6 +52,7 @@ export default function Register() {
       })
 
       setSuccess("Account created successfully. Redirecting to login...")
+      toast.success("Welcome email sent", { description: "A confirmation has been sent to your email address." })
       window.setTimeout(() => navigate("/login", { replace: true }), 900)
     } catch {
       setError("Unable to create account. Please verify your details and try again.")

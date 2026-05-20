@@ -151,7 +151,7 @@ export default function Profile() {
       setCurrentPassword("")
       setNewPassword("")
       setConfirmPassword("")
-    } catch (err) {
+    } catch (err: any) {
       setPasswordError(err.response?.data?.error || "Unable to change password.")
     } finally {
       setPasswordLoading(false)
@@ -183,7 +183,7 @@ export default function Profile() {
       setNewPin("")
       setConfirmPin("")
       setPinPassword("")
-    } catch (err) {
+    } catch (err: any) {
       setPinError(err.response?.data?.error || "Unable to set PIN.")
     } finally {
       setPinLoading(false)
@@ -228,7 +228,7 @@ export default function Profile() {
       })
       updateUploadState(docType, { file: null, uploading: false, progress: 0 })
       fetchData()
-    } catch (err) {
+    } catch (err: any) {
       updateUploadState(docType, {
         uploading: false,
         error: err.response?.data?.error || "Upload failed",
@@ -252,10 +252,10 @@ export default function Profile() {
     setError("")
     setSuccess("")
     try {
-      await kycService.submitKYC([])
+      await kycService.submitKYC()
       setSuccess("Documents submitted for review. You will be notified once the review is complete.")
       fetchData()
-    } catch (err) {
+    } catch (err: any) {
       setError(err.response?.data?.error || "Failed to submit KYC.")
     } finally {
       setSubmitting(false)

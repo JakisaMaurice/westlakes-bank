@@ -100,7 +100,7 @@ export default function KYCUpload({ kyc, onUpdate }: KYCUploadProps) {
     setSubmitError(null)
 
     try {
-      await kycService.submitKYC([])
+      await kycService.submitKYC()
       onUpdate()
     } catch (err: any) {
       setSubmitError(err.response?.data?.error || "Failed to submit KYC")

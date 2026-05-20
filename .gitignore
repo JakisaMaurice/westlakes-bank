@@ -4,11 +4,18 @@ dist/
 
 # Python
 venv/
+.venv/
 __pycache__/
 *.pyc
 
 # Env
 .env
+.env.local
+.env.*.local
 
 # OS
 .DS_Store
+Thumbs.db
+
+# Static files
+staticfiles/

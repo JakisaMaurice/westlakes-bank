@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
+import { Loader2, AlertCircle, CheckCircle, Clock, XCircle, MessageSquare, Send } from "lucide-react"
 import { api } from "@/lib/api"
-import { Loader2, Send, Clock, CheckCircle, AlertCircle, XCircle, MessageSquare } from "lucide-react"
+import { toast } from "sonner"
 
 interface TicketReply {
   id: number
@@ -70,6 +71,7 @@ export default function Tickets() {
       setSubject("")
       setMessage("")
       setSuccess("Ticket submitted successfully.")
+      toast.success("Support ticket confirmation email sent", { description: "A notification has been sent to your email address." })
     } catch (err: any) {
       setError(err.response?.data?.error || "Unable to create ticket. Please try again.")
     }

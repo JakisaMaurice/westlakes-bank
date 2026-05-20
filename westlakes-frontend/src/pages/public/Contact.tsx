@@ -18,7 +18,7 @@ export default function Contact() {
   const [loading, setLoading] = useState(false)
 
   function openEmailFallback() {
-    const subject = encodeURIComponent(`Westlakes Bank inquiry from ${fullName}`)
+    const subject = encodeURIComponent(`${import.meta.env.VITE_APP_NAME ?? "Westlakes Bank"} inquiry from ${fullName}`)
     const body = encodeURIComponent(
       `Name: ${fullName}\nEmail: ${email}\nPhone: ${phoneNumber || "Not provided"}\n\nMessage:\n${message}`
     )

@@ -7,6 +7,12 @@ export interface BankAccount {
   balance: string
   status: string
   created_at: string
+  card_status?: string
+  card_status_display?: string
+  card_number?: string
+  card_last_four?: string
+  card_expiry?: string
+  card_blocked_reason?: string
 }
 
 export interface Customer {

@@ -220,7 +220,7 @@ export default function AdminVerificationManagement() {
 
       {/* Detail Modal */}
       <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="w-[90vw] max-w-[1400px] max-h-[85vh] overflow-y-auto" style={{ width: '90vw', maxWidth: '1400px' }}>
           <DialogHeader>
             <DialogTitle>KYC Verification Details</DialogTitle>
           </DialogHeader>
@@ -285,6 +285,7 @@ export default function AdminVerificationManagement() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
+                          onClick={(e) => e.stopPropagation()}
                         >
                           <Eye className="h-3 w-3" />
                           View

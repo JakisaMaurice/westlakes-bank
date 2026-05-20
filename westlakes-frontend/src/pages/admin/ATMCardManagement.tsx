@@ -78,7 +78,7 @@ export default function ATMCardManagement() {
       await api.post(`/api/accounts/${accountId}/atm-card/issue/`)
       setShowIssueModal(false)
       fetchAccounts()
-    } catch (err: { response?: { data?: { error?: string } } }) {
+    } catch (err: any) {
       setError(err?.response?.data?.error || "Unable to issue card.")
     } finally {
       setProcessing(false)
@@ -94,7 +94,7 @@ export default function ATMCardManagement() {
       setSelectedCard(null)
       setBlockReason("")
       fetchAccounts()
-    } catch (err: { response?: { data?: { error?: string } } }) {
+    } catch (err: any) {
       setError(err?.response?.data?.error || "Unable to block card.")
     } finally {
       setProcessing(false)
@@ -106,7 +106,7 @@ export default function ATMCardManagement() {
     try {
       await api.post(`/api/accounts/${accountId}/atm-card/unblock/`)
       fetchAccounts()
-    } catch (err: { response?: { data?: { error?: string } } }) {
+    } catch (err: any) {
       setError(err?.response?.data?.error || "Unable to unblock card.")
     } finally {
       setProcessing(false)
