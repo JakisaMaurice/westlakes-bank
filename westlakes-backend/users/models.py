@@ -45,6 +45,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     transaction_pin = models.CharField(max_length=128, blank=True)
+    password_reset_token = models.CharField(max_length=128, blank=True, default='')
+    password_reset_expires = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     objects = UserManager()

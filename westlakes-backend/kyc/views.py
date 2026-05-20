@@ -112,6 +112,7 @@ class SubmitKYCView(generics.GenericAPIView):
             )
 
             NotificationService.notify_admin_new_kyc(request.user)
+            NotificationService.notify_kyc_submitted(request.user)
 
         return Response(
             KYCVerificationSerializer(kyc, context={'request': request}).data

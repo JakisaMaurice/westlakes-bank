@@ -261,3 +261,90 @@ def get_admin_for_messaging(request):
     if not admin:
         return Response({'error': 'No admin available'}, status=status.HTTP_404_NOT_FOUND)
     return Response({'id': admin.id, 'full_name': admin.full_name, 'email': admin.email})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def forgot_password(request):
+    email = request.data.get('email', '')
+    if not email:
+        return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = User.objects.filter(email=email).first()
+    if not user:
+        return Response({'message': 'If an account with that email exists, a reset link has been sent.'})
+
+    from django.utils import timezone
+    from datetime import timedelta
+    import secrets
+    token = secrets.token_urlsafe(48)
+    user.password_reset_token = token
+    user.password_reset_expires = timezone.now() + timedelta(hours=1)
+    user.save()
+
+    from notifications.email_service import FRONTEND_URL
+    reset_url = f"{FRONTEND_URL}/reset-password?token={token}"
+    NotificationService.notify_password_reset_request(user, reset_url)
+
+    return Response({'message': 'If an account with that email exists, a reset link has been sent.'})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def reset_password(request):
+    token = request.data.get('token', '')
+    new_password = request.data.get('new_password', '')
+
+    if not token or not new_password:
+        return Response({'error': 'Token and new password are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if len(new_password) < 8:
+        return Response({'error': 'Password must be at least 8 characters'}, status=status.HTTP_400_BAD_REQUEST)
+
+    from django.utils import timezone
+    user = User.objects.filter(
+        password_reset_token=token,
+        password_reset_expires__gt=timezone.now()
+    ).first()
+
+    if not user:
+        return Response({'error': 'Invalid or expired reset token'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user.set_password(new_password)
+    user.password_reset_token = ''
+    user.password_reset_expires = None
+    user.save()
+
+    NotificationService.notify_password_changed(user)
+
+    return Response({'message': 'Password reset successfully'})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    user = request.user
+    current_password = request.data.get('current_password', '')
+    new_password = request.data.get('new_password', '')
+
+    if not current_password or not new_password:
+        return Response({'error': 'Current password and new password are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if len(new_password) < 8:
+        return Response({'error': 'Password must be at least 8 characters'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not user.check_password(current_password):
+        return Response({'error': 'Current password is incorrect'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user.set_password(new_password)
+    user.save()
+
+    NotificationService.notify_password_changed(user)
+
+    AuditLog.objects.create(
+        customer=user,
+        action='PASSWORD_CHANGED',
+        notes='Password changed by user',
+    )
+
+    return Response({'message': 'Password changed successfully'})

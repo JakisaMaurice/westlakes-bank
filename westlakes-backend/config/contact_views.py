@@ -29,7 +29,7 @@ def contact_message(request):
         )
 
     phone_number = data.get('phone_number') or 'Not provided'
-    subject = f"Westlakes Bank contact form: {data['full_name']}"
+    subject = f"{settings.BANK_NAME} contact form: {data['full_name']}"
     body = (
         f"Name: {data['full_name']}\n"
         f"Email: {data['email']}\n"

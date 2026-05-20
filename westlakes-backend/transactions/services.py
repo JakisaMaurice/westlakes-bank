@@ -45,24 +45,37 @@ class TransactionService:
                 amount=transaction.amount,
                 to_account=transaction.receiver_account.account_number,
                 fee=str(transaction.fee),
+                balance_after=str(transaction.balance_after) if transaction.balance_after else "",
+                recipient_name=transaction.receiver_account.user.full_name,
+                sender_account=transaction.sender_account.account_number,
+                reference=transaction.transaction_reference,
             )
             NotificationService.notify_transfer_received(
                 user=transaction.receiver_account.user,
                 amount=transaction.amount,
                 from_name=transaction.sender_account.user.full_name,
                 from_account=transaction.sender_account.account_number,
+                reference=transaction.transaction_reference,
             )
         elif transaction.transaction_type == 'DEPOSIT':
+            deposit_type = "Cash Deposit"
+            if transaction.deposit_type:
+                deposit_type = dict(Transaction.DEPOSIT_TYPE_CHOICES).get(transaction.deposit_type, transaction.deposit_type)
             NotificationService.notify_deposit(
                 user=transaction.receiver_account.user,
                 amount=transaction.amount,
                 account_number=transaction.receiver_account.account_number,
+                balance_after=str(transaction.balance_after) if transaction.balance_after else "",
+                deposit_type=deposit_type,
+                reference=transaction.transaction_reference,
             )
         elif transaction.transaction_type == 'WITHDRAWAL':
             NotificationService.notify_withdrawal(
                 user=transaction.sender_account.user,
                 amount=transaction.amount,
                 account_number=transaction.sender_account.account_number,
+                balance_after=str(transaction.balance_after) if transaction.balance_after else "",
+                reference=transaction.transaction_reference,
             )
 
     @staticmethod
