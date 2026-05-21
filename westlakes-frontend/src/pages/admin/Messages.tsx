@@ -11,7 +11,8 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { api } from "@/lib/api"
-import { Loader2, Send, Mail, MailOpen, Clock, User } from "lucide-react"
+import { Loader2, Send, Mail, MailOpen, Clock, User, AlertCircle, AtSign } from "lucide-react"
+import { toast } from "sonner"
 
 interface Message {
   id: number
@@ -46,6 +47,13 @@ export default function AdminMessages() {
   const [replyType, setReplyType] = useState("DIRECT")
   const [sending, setSending] = useState(false)
   const [filter, setFilter] = useState<"all" | "unread">("all")
+
+  const [showExternalEmail, setShowExternalEmail] = useState(false)
+  const [extEmail, setExtEmail] = useState("")
+  const [extSubject, setExtSubject] = useState("")
+  const [extBody, setExtBody] = useState("")
+  const [extSending, setExtSending] = useState(false)
+  const [extError, setExtError] = useState("")
 
   const fetchMessages = useCallback(async () => {
     setLoading(true)
@@ -97,10 +105,63 @@ export default function AdminMessages() {
       setReplySubject("")
       setShowDetail(false)
       fetchMessages()
+      toast.success("Reply sent successfully")
     } catch (err: any) {
       setError(err?.response?.data?.error || "Failed to send reply.")
     } finally {
       setSending(false)
+    }
+  }
+
+  const openExternalEmail = () => {
+    setExtEmail("")
+    setExtSubject("")
+    setExtBody("")
+    setExtError("")
+    setShowExternalEmail(true)
+  }
+
+  const openExternalEmailTo = (email: string) => {
+    setExtEmail(email)
+    setExtSubject("")
+    setExtBody("")
+    setExtError("")
+    setShowExternalEmail(true)
+  }
+
+  const handleSendExternalEmail = async () => {
+    if (!extEmail.trim()) {
+      setExtError("Email address is required")
+      return
+    }
+    if (!extBody.trim()) {
+      setExtError("Message body is required")
+      return
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(extEmail.trim())) {
+      setExtError("Please enter a valid email address")
+      return
+    }
+
+    setExtSending(true)
+    setExtError("")
+
+    try {
+      await api.post("/api/messages/send-external-email/", {
+        recipient_email: extEmail.trim(),
+        subject: extSubject,
+        body: extBody,
+      })
+      setShowExternalEmail(false)
+      toast.success("Email sent successfully", {
+        description: `Message delivered to ${extEmail}`,
+      })
+    } catch (err: any) {
+      setExtError(err?.response?.data?.error || "Failed to send email. Email service may not be configured.")
+    } finally {
+      setExtSending(false)
     }
   }
 
@@ -118,14 +179,20 @@ export default function AdminMessages() {
               : "All caught up!"}
           </p>
         </div>
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value as "all" | "unread")}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-        >
-          <option value="all">All Messages</option>
-          <option value="unread">Unread Only</option>
-        </select>
+        <div className="flex items-center gap-3">
+          <Button onClick={openExternalEmail} className="bg-blue-600 hover:bg-blue-700">
+            <AtSign className="mr-2 h-4 w-4" />
+            Send External Email
+          </Button>
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as "all" | "unread")}
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+          >
+            <option value="all">All Messages</option>
+            <option value="unread">Unread Only</option>
+          </select>
+        </div>
       </div>
 
       {error && <p className="text-red-600">{error}</p>}
@@ -267,6 +334,16 @@ export default function AdminMessages() {
                   <Send className="mr-2 h-4 w-4" />
                   Reply
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDetail(false)
+                    openExternalEmailTo(selectedMessage.sender_name)
+                  }}
+                >
+                  <AtSign className="mr-2 h-4 w-4" />
+                  Email Externally
+                </Button>
               </div>
             </div>
           )}
@@ -328,6 +405,81 @@ export default function AdminMessages() {
                 <Send className="mr-2 h-4 w-4" />
               )}
               Send Reply
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* External Email Modal */}
+      <Dialog open={showExternalEmail} onOpenChange={setShowExternalEmail}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Send External Email</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="rounded-lg bg-blue-50 border border-blue-100 p-3">
+              <p className="text-sm text-blue-800">
+                Send an email to any email address, even if they are not a registered user of Westlakes Bank.
+                The email will be sent from the bank's admin account.
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Recipient Email <span className="text-red-500">*</span>
+              </label>
+              <Input
+                type="email"
+                value={extEmail}
+                onChange={(e) => setExtEmail(e.target.value)}
+                placeholder="e.g., john@example.com"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Subject</label>
+              <Input
+                value={extSubject}
+                onChange={(e) => setExtSubject(e.target.value)}
+                placeholder="Email subject..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Message <span className="text-red-500">*</span>
+              </label>
+              <Textarea
+                value={extBody}
+                onChange={(e) => setExtBody(e.target.value)}
+                placeholder="Type your message..."
+                rows={6}
+              />
+            </div>
+            {extError && (
+              <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                {extError}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowExternalEmail(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSendExternalEmail}
+              disabled={extSending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {extSending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Send Email
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
