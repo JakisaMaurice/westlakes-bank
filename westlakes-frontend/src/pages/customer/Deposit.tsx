@@ -27,19 +27,6 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import KYCGate from "@/components/customer/KYCGate"
-  AlertCircle,
-  ArrowRight,
-  Search,
-  Clock,
-  XCircle,
-  CheckCheck,
-  Banknote,
-  Smartphone,
-  Globe,
-  Building2,
-  Wallet,
-} from "lucide-react"
-import { toast } from "sonner"
 
 interface Account {
   id: number
