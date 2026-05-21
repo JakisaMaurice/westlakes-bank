@@ -34,7 +34,7 @@ export function TransactionsTable({ rows }: TransactionsTableProps) {
             <ArrowRight className="size-3.5" />
           </button>
         </div>
-        <div className="overflow-hidden rounded-xl border border-slate-200">
+        <div className="overflow-x-auto rounded-xl border border-slate-200">
           <table className="w-full min-w-full border-separate border-spacing-0 text-left text-xs">
             <thead className="bg-slate-950 text-white">
               <tr>

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 function DashboardVisual() {
   return (
     <div className="relative mx-auto w-full max-w-xl">
-      <div className="absolute -left-4 top-10 z-20 rounded-2xl border border-white/70 bg-white/95 p-4 shadow-2xl shadow-blue-950/30 sm:-left-10">
+      <div className="absolute -left-4 top-10 z-20 hidden rounded-2xl border border-white/70 bg-white/95 p-4 shadow-2xl shadow-blue-950/30 sm:-left-10 sm:block">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Monthly growth</p>
         <div className="mt-3 flex items-end gap-2">
           <p className="text-2xl font-semibold text-[#0F172A]">+18.4%</p>
@@ -14,7 +14,7 @@ function DashboardVisual() {
         </div>
       </div>
 
-      <div className="absolute -right-2 bottom-12 z-20 rounded-2xl border border-white/70 bg-white/95 p-4 shadow-2xl shadow-blue-950/30 sm:-right-8">
+      <div className="absolute -right-2 bottom-12 z-20 hidden rounded-2xl border border-white/70 bg-white/95 p-4 shadow-2xl shadow-blue-950/30 sm:-right-8 sm:block">
         <div className="flex items-center gap-3">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#0A3D91] text-white">
             <ShieldCheck className="size-5" />

@@ -14,14 +14,15 @@ interface DashboardSidebarProps {
   roleLabel: string
   onLogout: () => void
   isMobile?: boolean
+  onNavigate?: () => void
 }
 
-export function DashboardSidebar({ items, userName, roleLabel, onLogout, isMobile = false }: DashboardSidebarProps) {
+export function DashboardSidebar({ items, userName, roleLabel, onLogout, isMobile = false, onNavigate }: DashboardSidebarProps) {
   return (
     <aside
       className={cn(
         "flex w-full flex-col overflow-hidden bg-[#0B1B34] p-2 text-white",
-        isMobile ? "h-full rounded-[2rem] shadow-2xl shadow-slate-950/20" : "h-screen"
+        isMobile ? "h-full" : "h-screen"
       )}
     >
       <div className="mb-2 flex items-center gap-2">
@@ -40,10 +41,14 @@ export function DashboardSidebar({ items, userName, roleLabel, onLogout, isMobil
       </div>
 
       <nav className="space-y-0.5 flex-1 overflow-y-auto">
-        {items.map((item) => (
+        {items.map((item) => {
+          const isDashboard = item.to === ""
+          return (
           <NavLink
             key={item.to}
             to={item.to}
+            end={isDashboard}
+            onClick={() => onNavigate?.()}
             className={({ isActive }) =>
               cn(
                 "group flex items-center gap-1.5 rounded-md px-1.5 py-1 text-[11px] font-medium transition",
@@ -58,7 +63,8 @@ export function DashboardSidebar({ items, userName, roleLabel, onLogout, isMobil
             </span>
             <span className="text-[11px]">{item.label}</span>
           </NavLink>
-        ))}
+          )
+        })}
       </nav>
 
       <div className="mt-auto pt-1.5 border-t border-white/10">

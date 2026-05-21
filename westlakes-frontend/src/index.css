@@ -129,50 +129,11 @@
     }
 }
 
-@keyframes westlakes-service-flow {
-  0% {
-    opacity: 0;
-    transform: translateX(calc(50vw + 360px)) scale(0.86);
+@layer utilities {
+  .table-responsive {
+    @apply block w-full overflow-x-auto;
   }
-  8% {
-    opacity: 0.68;
-  }
-  39% {
-    opacity: 0.82;
-    transform: translateX(42%) scale(0.92);
-  }
-  47% {
-    opacity: 1;
-    transform: translateX(-50%) scale(1.14);
-  }
-  53% {
-    opacity: 1;
-    transform: translateX(-50%) scale(1.14);
-  }
-  61% {
-    opacity: 0.82;
-    transform: translateX(-142%) scale(0.92);
-  }
-  92% {
-    opacity: 0.68;
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(calc(-50vw - 680px)) scale(0.86);
-  }
-}
-
-.westlakes-service-flow-card {
-  animation-name: westlakes-service-flow;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-  will-change: transform, opacity;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .westlakes-service-flow-card {
-    animation: none;
-    position: static;
-    transform: none;
+  .table-responsive table {
+    @apply min-w-full;
   }
 }

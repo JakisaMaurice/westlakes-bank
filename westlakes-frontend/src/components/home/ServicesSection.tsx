@@ -6,11 +6,11 @@ import { serviceItems } from "@/components/shared/siteData"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
 
-const flowDuration = 24
+const displayedServices = serviceItems.slice(0, 3)
 
 export default function ServicesSection() {
   return (
-    <section className="overflow-hidden bg-[#061B3A] py-20 text-white">
+    <section className="bg-[#061B3A] py-20 text-white">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 sm:px-6 md:flex-row md:items-end md:justify-between lg:px-8">
         <SectionHeading
           eyebrow="Banking services"
@@ -26,21 +26,14 @@ export default function ServicesSection() {
         </Button>
       </div>
 
-      <div className="relative mt-12 h-[380px] overflow-hidden sm:h-[360px]">
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-[#061B3A] to-transparent sm:w-40" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-[#061B3A] to-transparent sm:w-40" />
-        <div className="pointer-events-none absolute left-1/2 top-0 z-0 h-full w-[360px] -translate-x-1/2 rounded-[2rem] bg-[#1E5EFF]/12 blur-2xl" />
-        {serviceItems.map((service, index) => {
+      <div className="mx-auto mt-12 flex max-w-7xl flex-col gap-6 px-4 sm:px-6 md:flex-row lg:px-8">
+        {displayedServices.map((service) => {
           const Icon = service.icon
 
           return (
             <Card
               key={service.title}
-              className="westlakes-service-flow-card absolute left-1/2 top-8 w-[280px] rounded-2xl border-white/15 bg-white p-2 shadow-2xl shadow-black/25 sm:w-[320px]"
-              style={{
-                animationDelay: `-${(flowDuration / serviceItems.length) * index}s`,
-                animationDuration: `${flowDuration}s`,
-              }}
+              className="w-full rounded-2xl border-white/15 bg-white p-2 shadow-2xl shadow-black/25"
             >
               <CardContent className="space-y-5 p-5">
                 <div className="flex items-center justify-between gap-4">

@@ -11,6 +11,7 @@ export default function CustomerDashboardLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [needsKYC, setNeedsKYC] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     const checkKYC = async () => {
@@ -54,14 +55,14 @@ export default function CustomerDashboardLayout() {
 
       <div className="lg:hidden border-b border-slate-200 bg-white/95 px-5 py-3 shadow-sm backdrop-blur-xl">
         <div className="flex items-center justify-between gap-3">
-          <Dialog>
+          <Dialog open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <DialogTrigger asChild>
               <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-900 shadow-sm transition hover:bg-slate-50">
                 <Menu className="size-4" />
               </button>
             </DialogTrigger>
             <DialogContent className="!top-0 !left-0 !translate-x-0 !-translate-y-0 fixed inset-y-0 left-0 z-50 w-full max-w-xs rounded-r-[2rem] bg-transparent p-0 shadow-2xl">
-              <DashboardSidebar items={customerNav} userName={user?.full_name ?? "Customer"} roleLabel="Customer portal" onLogout={handleLogout} isMobile />
+              <DashboardSidebar items={customerNav} userName={user?.full_name ?? "Customer"} roleLabel="Customer portal" onLogout={handleLogout} isMobile onNavigate={() => setMobileMenuOpen(false)} />
             </DialogContent>
           </Dialog>
 
@@ -76,7 +77,7 @@ export default function CustomerDashboardLayout() {
         </div>
       </div>
 
-      <main className="lg:ml-48 min-h-screen overflow-y-auto px-5 py-4">
+      <main className="lg:ml-48 min-h-screen overflow-x-hidden overflow-y-auto px-5 py-4">
         <TopNavbar title="Customer dashboard" subtitle="Digital banking made premium." />
         <div className="mt-4">
           <Outlet />

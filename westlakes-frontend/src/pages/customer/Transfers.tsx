@@ -446,9 +446,8 @@ export default function Transfers() {
             <p className="text-slate-500">No transfers found</p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+            <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Reference</th>
@@ -502,9 +501,8 @@ export default function Transfers() {
                   })}
                 </tbody>
               </table>
-            </div>
 
-            {/* Pagination */}
+              {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3">
                 <p className="text-sm text-slate-500">

@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { useAuth } from "@/lib/useAuth"
 import { DashboardSidebar } from "@/components/dashboard/Sidebar"
 import { TopNavbar } from "@/components/dashboard/TopNavbar"
+import { useState } from "react"
 
 const adminNav = [
   { label: "Dashboard Overview", to: "", icon: LayoutDashboard },
@@ -21,6 +22,7 @@ const adminNav = [
 export default function AdminDashboardLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   function handleLogout() {
     logout()
@@ -37,14 +39,14 @@ export default function AdminDashboardLayout() {
 
       <div className="lg:hidden border-b border-slate-200 bg-white/95 px-5 py-3 shadow-sm backdrop-blur-xl">
         <div className="flex items-center justify-between gap-3">
-          <Dialog>
+          <Dialog open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <DialogTrigger asChild>
               <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-900 shadow-sm transition hover:bg-slate-50">
                 <Menu className="size-4" />
               </button>
             </DialogTrigger>
             <DialogContent className="!top-0 !left-0 !translate-x-0 !-translate-y-0 fixed inset-y-0 left-0 z-50 w-full max-w-xs rounded-r-[2rem] bg-transparent p-0 shadow-2xl">
-              <DashboardSidebar items={adminNav} userName={user?.full_name ?? "Admin"} roleLabel="Admin console" onLogout={handleLogout} isMobile />
+              <DashboardSidebar items={adminNav} userName={user?.full_name ?? "Admin"} roleLabel="Admin console" onLogout={handleLogout} isMobile onNavigate={() => setMobileMenuOpen(false)} />
             </DialogContent>
           </Dialog>
 
@@ -59,8 +61,8 @@ export default function AdminDashboardLayout() {
         </div>
       </div>
 
-      <main className="lg:ml-48 min-h-screen overflow-y-auto px-5 py-4">
-        <TopNavbar title="Admin dashboard" subtitle="Operations, monitoring, and customer oversight." />
+      <main className="lg:ml-48 min-h-screen overflow-x-hidden overflow-y-auto px-5 py-4">
+        <TopNavbar title="Admin dashboard" subtitle="Operations, monitoring, and customer oversight." showProfile={false} />
         <div className="mt-4">
           <Outlet />
         </div>

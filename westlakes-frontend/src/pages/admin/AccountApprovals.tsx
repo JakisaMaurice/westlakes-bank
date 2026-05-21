@@ -132,7 +132,7 @@ export default function AccountApprovals() {
           <p className="mt-1 text-sm text-slate-400">New account applications will appear here for review.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>

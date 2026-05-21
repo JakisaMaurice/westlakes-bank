@@ -32,20 +32,19 @@ const notificationIcons: Record<string, string> = {
 interface TopNavbarProps {
   title: string
   subtitle: string
+  showProfile?: boolean
 }
 
-export function TopNavbar({ title, subtitle }: TopNavbarProps) {
+export function TopNavbar({ title, subtitle, showProfile = true }: TopNavbarProps) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
-  // Notification state
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifLoading, setNotifLoading] = useState(false)
   const notifRef = useRef<HTMLDivElement>(null)
 
-  // Profile dropdown state
   const [profileOpen, setProfileOpen] = useState(false)
   const profileRef = useRef<HTMLDivElement>(null)
 
@@ -68,7 +67,6 @@ export function TopNavbar({ title, subtitle }: TopNavbarProps) {
     return () => clearInterval(interval)
   }, [])
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
@@ -131,19 +129,19 @@ export function TopNavbar({ title, subtitle }: TopNavbarProps) {
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-xl">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="space-y-1">
+    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+      <div className="flex items-center justify-between gap-4">
+        <div className="space-y-1 min-w-0">
           <div className="inline-flex items-center gap-1.5 rounded-full bg-[#E6EEFF] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.32em] text-[#0A3D91]">
             <Sparkles className="size-3 text-[#0A3D91]" /> Trusted banking
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-[0.32em] text-slate-500">{subtitle}</p>
-            <h1 className="mt-0.5 text-sm font-bold tracking-tight text-[#1E293B]">{title}</h1>
+            <p className="text-[10px] uppercase tracking-[0.32em] text-slate-500 truncate">{subtitle}</p>
+            <h1 className="mt-0.5 text-sm font-bold tracking-tight text-[#1E293B] truncate">{title}</h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Notification Bell */}
           <div className="relative" ref={notifRef}>
             <Button
@@ -157,14 +155,14 @@ export function TopNavbar({ title, subtitle }: TopNavbarProps) {
             >
               <Bell className="size-3.5" />
               {unreadCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
             </Button>
 
             {notifOpen && (
-              <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-slate-200 bg-white shadow-lg sm:w-96">
+              <div className="absolute -right-2 top-full z-50 mt-2 w-80 rounded-xl border border-slate-200 bg-white shadow-lg sm:right-0 sm:w-96" style={{ backgroundColor: '#ffffff', isolation: 'isolate' }}>
                 <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
                   <h3 className="font-semibold text-slate-900">Notifications</h3>
                   {unreadCount > 0 && (
@@ -238,6 +236,7 @@ export function TopNavbar({ title, subtitle }: TopNavbarProps) {
           </div>
 
           {/* Profile Dropdown */}
+          {showProfile && (
           <div className="relative" ref={profileRef}>
             <button
               className="flex items-center gap-1.5 rounded-full bg-[#0A3D91] px-1.5 py-1.5 text-white shadow-sm hover:bg-[#164BB5] transition"
@@ -253,7 +252,7 @@ export function TopNavbar({ title, subtitle }: TopNavbarProps) {
             </button>
 
             {profileOpen && (
-              <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-slate-200 bg-white shadow-lg">
+              <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-slate-200 bg-white shadow-lg" style={{ backgroundColor: '#ffffff', isolation: 'isolate' }}>
                 <div className="border-b border-slate-100 px-4 py-3">
                   <p className="text-sm font-semibold text-slate-900 truncate">{user?.full_name}</p>
                   <p className="text-xs text-slate-500 truncate">{user?.email}</p>
@@ -291,6 +290,7 @@ export function TopNavbar({ title, subtitle }: TopNavbarProps) {
               </div>
             )}
           </div>
+          )}
         </div>
       </div>
     </div>
