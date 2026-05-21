@@ -26,3 +26,12 @@ class MessageCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['sender'] = self.context['request'].user
         return super().create(validated_data)
+
+
+class AdminExternalEmailSerializer(serializers.Serializer):
+    recipient_email = serializers.EmailField()
+    subject = serializers.CharField(max_length=255, allow_blank=True)
+    body = serializers.CharField()
+
+    def validate_recipient_email(self, value):
+        return value.strip().lower()

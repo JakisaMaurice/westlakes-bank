@@ -5,8 +5,11 @@ from rest_framework.response import Response
 from django.db import models
 from django.shortcuts import get_object_or_404
 from .models import Message
-from .serializers import MessageSerializer, MessageCreateSerializer
+from .serializers import MessageSerializer, MessageCreateSerializer, AdminExternalEmailSerializer
 from notifications.services import NotificationService
+from users.permissions import IsAdmin
+from notifications.email_service import send_admin_email
+from audit_logs.models import AuditLog
 
 
 class MessageListCreateView(generics.ListCreateAPIView):
@@ -55,3 +58,38 @@ def mark_message_read(request, message_id):
         message.mark_as_read()
         return Response(MessageSerializer(message).data)
     return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+
+
+@api_view(['POST'])
+@permission_classes([IsAdmin])
+def send_external_email(request):
+    serializer = AdminExternalEmailSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    recipient_email = serializer.validated_data['recipient_email']
+    subject = serializer.validated_data['subject']
+    body = serializer.validated_data['body']
+    admin = request.user
+
+    success = send_admin_email(
+        to_email=recipient_email,
+        subject=subject,
+        body_text=body,
+        admin_name=admin.full_name,
+    )
+
+    AuditLog.objects.create(
+        admin=admin,
+        action='MESSAGE_SENT',
+        new_value={
+            'recipient_email': recipient_email,
+            'subject': subject,
+            'channel': 'external_email',
+        },
+        notes=f"External email sent to {recipient_email}",
+    )
+
+    if success:
+        return Response({'detail': f'Email sent successfully to {recipient_email}'}, status=status.HTTP_200_OK)
+    else:
+        return Response({'error': 'Failed to send email. Email service may not be configured.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

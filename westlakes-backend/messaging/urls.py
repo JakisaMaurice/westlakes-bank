@@ -7,4 +7,5 @@ urlpatterns = [
     path('', views.MessageListCreateView.as_view(), name='message-list-create'),
     path('<int:pk>/', views.MessageDetailView.as_view(), name='message-detail'),
     path('<int:message_id>/read/', views.mark_message_read, name='mark-message-read'),
+    path('send-external-email/', views.send_external_email, name='send-external-email'),
 ]

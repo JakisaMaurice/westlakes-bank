@@ -665,6 +665,31 @@ def send_password_reset_email(to_email: str, customer_name: str, reset_url: str)
     return send_email(to_email, subject, html, text)
 
 
+def send_admin_email(to_email: str, subject: str, body_text: str, admin_name: str = "") -> bool:
+    from notifications.services import NotificationService
+    subject_text = subject or f"Message from {BANK_NAME}"
+    content = f"""
+        <h2 style="color: #1B3A6B; margin: 0 0 16px 0; font-size: 20px; font-weight: 700;">{subject_text}</h2>
+        <p style="color: #334155; font-size: 15px; line-height: 1.7; margin: 0 0 16px 0;">
+            Dear Valued Customer,
+        </p>
+        <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 20px 24px; margin: 16px 0;">
+            <p style="color: #334155; font-size: 15px; line-height: 1.8; margin: 0; white-space: pre-wrap;">{body_text}</p>
+        </div>
+        <p style="color: #334155; font-size: 15px; line-height: 1.7; margin: 0 0 16px 0;">
+            If you have any questions or concerns, please don't hesitate to contact us at <a href="mailto:{SUPPORT_EMAIL}" style="color: #2A5F9E;">{SUPPORT_EMAIL}</a>.
+        </p>
+        <p style="color: #334155; font-size: 15px; line-height: 1.7; margin: 0;">
+            Best regards,<br/>
+            <strong>{admin_name or BANK_NAME} Team</strong>
+        </p>
+    """
+    html = _render_email(subject_text, content)
+    text = f"Dear Valued Customer,\n\n{body_text}\n\nBest regards,\n{admin_name or BANK_NAME} Team\n\nContact us at {SUPPORT_EMAIL}"
+    result = send_email(to_email, subject_text, html, text)
+    return result
+
+
 def send_password_changed_email(to_email: str, customer_name: str) -> bool:
     subject = "Password Changed Successfully"
     content = f"""
