@@ -23,6 +23,7 @@ import MyCards from "@/pages/customer/MyCards"
 import CustomerNotifications from "@/pages/customer/Notifications"
 import CustomerProfile from "@/pages/customer/Profile"
 import KYCVerification from "@/pages/customer/KYCVerification"
+import CustomerDeposit from "@/pages/customer/Deposit"
 import AdminDashboard from "@/pages/admin/AdminDashboard"
 import AdminNotifications from "@/pages/admin/Notifications"
 import CustomerManagement from "@/pages/admin/CustomerManagement"
@@ -64,6 +65,7 @@ function AppRoutes() {
             <Route path="notifications" element={<CustomerNotifications />} />
             <Route path="profile" element={<CustomerProfile />} />
             <Route path="verify" element={<KYCVerification />} />
+            <Route path="deposit" element={<CustomerDeposit />} />
           </Route>
         </Route>
 

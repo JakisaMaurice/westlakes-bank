@@ -1,5 +1,5 @@
 import { Outlet, useNavigate } from "react-router-dom"
-import { Home, Wallet, TrendingUp, ArrowRightCircle, MessageSquare, Bell, User, Menu, ShieldCheck, Mail, CreditCard } from "lucide-react"
+import { Home, Wallet, TrendingUp, ArrowRightCircle, MessageSquare, Bell, User, Menu, ShieldCheck, Mail, CreditCard, Banknote } from "lucide-react"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { useAuth } from "@/lib/useAuth"
 import { DashboardSidebar } from "@/components/dashboard/Sidebar"
@@ -38,6 +38,7 @@ export default function CustomerDashboardLayout() {
     { label: "Accounts", to: "accounts", icon: Wallet },
     { label: "Transactions", to: "transactions", icon: TrendingUp },
     { label: "Transfers", to: "transfers", icon: ArrowRightCircle },
+    { label: "Deposit", to: "deposit", icon: Banknote },
     { label: "ATM Cards", to: "cards", icon: CreditCard },
     { label: "Support Tickets", to: "tickets", icon: MessageSquare },
     { label: "Messages", to: "messages", icon: Mail },

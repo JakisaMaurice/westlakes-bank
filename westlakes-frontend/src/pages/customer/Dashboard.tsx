@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { api } from "@/lib/api"
-import { Loader2, AlertCircle, CheckCircle, Clock, FileText, ArrowRight, CreditCard, Banknote } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle, Clock, FileText, ArrowRight, CreditCard, Banknote, PlusCircle } from "lucide-react"
 import KYCUpload from "@/components/dashboard/KYCUpload"
 import kycService, { type KYCVerification } from "@/services/kycService"
 
@@ -263,10 +263,10 @@ export default function CustomerDashboard() {
                 variant="outline"
                 className="justify-start"
                 disabled={needsKYC}
-                onClick={() => (window.location.href = "/dashboard/transfers")}
+                onClick={() => (window.location.href = "/dashboard/deposit")}
               >
-                <ArrowRight className="mr-2 h-4 w-4" />
-                Send Money
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Deposit Funds
               </Button>
               <Button
                 variant="outline"
