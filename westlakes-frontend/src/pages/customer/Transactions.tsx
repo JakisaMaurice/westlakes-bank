@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
+import KYCGate from "@/components/customer/KYCGate"
 
 interface Transaction {
   id: number
@@ -144,8 +145,9 @@ export default function Transactions() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <KYCGate>
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm uppercase tracking-[0.28em] text-amber-500">Transactions</p>
           <h1 className="mt-3 text-3xl font-semibold text-slate-950">Transaction History</h1>
@@ -367,5 +369,6 @@ export default function Transactions() {
         </>
       )}
     </div>
+    </KYCGate>
   )
 }

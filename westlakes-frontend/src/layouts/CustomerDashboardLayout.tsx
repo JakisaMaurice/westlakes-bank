@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from "react-router-dom"
+import { Outlet, useNavigate, useLocation } from "react-router-dom"
 import { Home, Wallet, TrendingUp, ArrowRightCircle, MessageSquare, Bell, User, Menu, ShieldCheck, Mail, CreditCard, Banknote } from "lucide-react"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { useAuth } from "@/lib/useAuth"
@@ -10,20 +10,33 @@ import { useEffect, useState } from "react"
 export default function CustomerDashboardLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [needsKYC, setNeedsKYC] = useState(true)
+  const [kycLoading, setKycLoading] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  const isVerifyPage = location.pathname.includes("/dashboard/verify")
 
   useEffect(() => {
     const checkKYC = async () => {
       try {
         const res = await kycService.getMyKYC()
-        setNeedsKYC(res.data.status !== "APPROVED")
+        const approved = res.data.status === "APPROVED"
+        setNeedsKYC(!approved)
       } catch {
         setNeedsKYC(true)
+      } finally {
+        setKycLoading(false)
       }
     }
     checkKYC()
   }, [])
+
+  useEffect(() => {
+    if (!kycLoading && needsKYC && !isVerifyPage) {
+      navigate("/dashboard/verify", { replace: true })
+    }
+  }, [kycLoading, needsKYC, isVerifyPage, navigate])
 
   function handleLogout() {
     logout()
@@ -45,6 +58,17 @@ export default function CustomerDashboardLayout() {
     { label: "Notifications", to: "notifications", icon: Bell },
     { label: "Profile", to: "profile", icon: User },
   ]
+
+  if (kycLoading) {
+    return (
+      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+          <p className="mt-4 text-sm text-slate-500">Verifying your identity status...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[#F5F7FA] text-[#1E293B]">

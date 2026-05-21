@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
 import { Plus, Loader2, Clock, CheckCircle, XCircle, AlertTriangle, Snowflake, CreditCard, Lock } from "lucide-react"
 import OpenAccountModal from "@/components/customer/OpenAccountModal"
+import KYCGate from "@/components/customer/KYCGate"
 
 interface Account {
   id: number
@@ -79,8 +80,9 @@ export default function Accounts() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <KYCGate>
+      <div className="space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[9px] uppercase tracking-[0.28em] text-amber-500">Accounts</p>
           <h1 className="mt-1.5 text-xl font-semibold text-slate-950">Your accounts</h1>
@@ -257,5 +259,6 @@ export default function Accounts() {
         onSuccess={fetchAccounts}
       />
     </div>
+    </KYCGate>
   )
 }

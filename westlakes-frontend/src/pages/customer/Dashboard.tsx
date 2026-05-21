@@ -3,9 +3,8 @@ import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { api } from "@/lib/api"
-import { Loader2, AlertCircle, CheckCircle, Clock, FileText, ArrowRight, CreditCard, Banknote, PlusCircle } from "lucide-react"
-import KYCUpload from "@/components/dashboard/KYCUpload"
-import kycService, { type KYCVerification } from "@/services/kycService"
+import { Loader2, AlertCircle, CheckCircle, Clock, ArrowRight, CreditCard, Banknote, PlusCircle, ShieldCheck } from "lucide-react"
+import kycService from "@/services/kycService"
 
 interface Account {
   id: number
@@ -20,7 +19,7 @@ interface Account {
 export default function CustomerDashboard() {
   const navigate = useNavigate()
   const [accounts, setAccounts] = useState<Account[]>([])
-  const [kyc, setKyc] = useState<KYCVerification | null>(null)
+  const [kycStatus, setKycStatus] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -32,7 +31,12 @@ export default function CustomerDashboard() {
         kycService.getMyKYC(),
       ])
       setAccounts(accountsRes.data)
-      setKyc(kycRes.data)
+      setKycStatus(kycRes.data.status)
+
+      if (kycRes.data.status !== "APPROVED") {
+        navigate("/dashboard/verify", { replace: true })
+        return
+      }
     } catch {
       setError("Failed to load dashboard data")
     } finally {
@@ -40,81 +44,19 @@ export default function CustomerDashboard() {
     }
   }
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     fetchData()
   }, [])
-  /* eslint-enable react-hooks/set-state-in-effect */
 
-  // Redirect to KYC if not approved
-  useEffect(() => {
-    if (!loading && kyc && kyc.status !== "APPROVED") {
-      navigate("/dashboard/verify", { replace: true })
-    }
-  }, [loading, kyc, navigate])
+  const totalBalance = accounts
+    .filter((a) => a.status === "ACTIVE")
+    .reduce((sum, acc) => sum + parseFloat(acc.balance), 0)
 
-  const totalBalance = accounts.reduce((sum, acc) => sum + parseFloat(acc.balance), 0)
-
-  const getKYCStatusConfig = () => {
-    if (!kyc) {
-      return {
-        icon: Clock,
-        color: "text-amber-600",
-        bgColor: "bg-amber-50",
-        borderColor: "border-amber-200",
-        title: "Complete Your Verification",
-        message: "Upload your KYC documents to activate your account",
-        action: "Start Verification",
-      }
-    }
-
-    switch (kyc.status) {
-      case "APPROVED":
-        return {
-          icon: CheckCircle,
-          color: "text-green-600",
-          bgColor: "bg-green-50",
-          borderColor: "border-green-200",
-          title: "Verification Approved",
-          message: "Your account is fully verified and active",
-          action: null,
-        }
-      case "REJECTED":
-        return {
-          icon: AlertCircle,
-          color: "text-red-600",
-          bgColor: "bg-red-50",
-          borderColor: "border-red-200",
-          title: "Verification Rejected",
-          message: kyc.rejection_reason || "Please resubmit your documents",
-          action: "Resubmit Documents",
-        }
-      case "PENDING_REVIEW":
-      case "UNDER_VERIFICATION":
-        return {
-          icon: Clock,
-          color: "text-blue-600",
-          bgColor: "bg-blue-50",
-          borderColor: "border-blue-200",
-          title: "Verification In Progress",
-          message: "Your documents are being reviewed",
-          action: null,
-        }
-      default:
-        return {
-          icon: FileText,
-          color: "text-amber-600",
-          bgColor: "bg-amber-50",
-          borderColor: "border-amber-200",
-          title: "Complete Your Verification",
-          message: "Upload your KYC documents to activate your account",
-          action: "Start Verification",
-        }
-    }
-  }
-
-  const kycConfig = getKYCStatusConfig()
-  const KycIcon = kycConfig.icon
+  const activeAccounts = accounts.filter((a) => a.status === "ACTIVE")
+  const pendingAccounts = accounts.filter((a) => a.status === "PENDING_VERIFICATION")
+  const restrictedAccounts = accounts.filter(
+    (a) => !["ACTIVE", "PENDING_VERIFICATION"].includes(a.status)
+  )
 
   if (loading) {
     return (
@@ -132,8 +74,6 @@ export default function CustomerDashboard() {
     )
   }
 
-  const needsKYC = kyc?.status !== "APPROVED"
-
   return (
     <div className="space-y-8">
       <div>
@@ -142,29 +82,46 @@ export default function CustomerDashboard() {
         <p className="mt-2 text-slate-600">Here's an overview of your account</p>
       </div>
 
-      {needsKYC && (
-        <Card className={`rounded-2xl border ${kycConfig.borderColor} ${kycConfig.bgColor}`}>
+      {pendingAccounts.length > 0 && (
+        <Card className="rounded-2xl border-amber-200 bg-amber-50">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
-              <div className={`rounded-full p-3 ${kycConfig.bgColor}`}>
-                <KycIcon className={`h-6 w-6 ${kycConfig.color}`} />
+              <div className="rounded-full bg-amber-100 p-3">
+                <Clock className="h-6 w-6 text-amber-600" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-slate-900">{kycConfig.title}</h3>
-                <p className="mt-1 text-sm text-slate-600">{kycConfig.message}</p>
-                {kycConfig.action && (
-                  <Button className="mt-4 bg-blue-600 hover:bg-blue-700">
-                    {kycConfig.action}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                )}
+                <h3 className="font-semibold text-slate-900">Account Pending Activation</h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  {pendingAccounts.length} account{pendingAccounts.length > 1 ? "s" : ""} awaiting admin approval.
+                  You'll be able to transact once activated.
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {restrictedAccounts.length > 0 && (
+        <Card className="rounded-2xl border-red-200 bg-red-50">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="rounded-full bg-red-100 p-3">
+                <AlertCircle className="h-6 w-6 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-slate-900">Account Access Restricted</h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  {restrictedAccounts.length} account{restrictedAccounts.length > 1 ? "s" : ""} {restrictedAccounts.length > 1 ? "are" : "is"} currently{" "}
+                  {restrictedAccounts.map((a) => a.status.replace("_", " ").toLowerCase()).join(", ")}.
+                  Please contact support for assistance.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="rounded-2xl border-slate-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-500">Total Balance</CardTitle>
@@ -173,6 +130,7 @@ export default function CustomerDashboard() {
             <p className="text-3xl font-bold text-slate-900">
               £{totalBalance.toLocaleString("en-GB", { minimumFractionDigits: 2 })}
             </p>
+            <p className="mt-1 text-xs text-slate-400">Across {activeAccounts.length} active account{activeAccounts.length !== 1 ? "s" : ""}</p>
           </CardContent>
         </Card>
 
@@ -181,27 +139,31 @@ export default function CustomerDashboard() {
             <CardTitle className="text-sm font-medium text-slate-500">Active Accounts</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-slate-900">
-              {accounts.filter((a) => a.status === "ACTIVE").length}
-            </p>
+            <p className="text-3xl font-bold text-slate-900">{activeAccounts.length}</p>
           </CardContent>
         </Card>
 
         <Card className="rounded-2xl border-slate-200">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Verification Status</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500">Verification</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className={`text-lg font-semibold ${kycConfig.color}`}>
-              {kyc?.status_display || "Not Started"}
-            </p>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <p className="text-lg font-semibold text-green-600">Verified</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border-slate-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-500">Pending Approval</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-slate-900">{pendingAccounts.length}</p>
           </CardContent>
         </Card>
       </div>
-
-      {needsKYC && kyc && (
-        <KYCUpload kyc={kyc} onUpdate={fetchData} />
-      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="rounded-2xl border-slate-200">
@@ -233,6 +195,12 @@ export default function CustomerDashboard() {
                               ? "bg-green-100 text-green-700"
                               : account.status === "PENDING_VERIFICATION"
                               ? "bg-amber-100 text-amber-700"
+                              : account.status === "SUSPENDED"
+                              ? "bg-orange-100 text-orange-700"
+                              : account.status === "FROZEN"
+                              ? "bg-blue-100 text-blue-700"
+                              : account.status === "LOCKED"
+                              ? "bg-red-100 text-red-700"
                               : "bg-slate-100 text-slate-700"
                           }`}
                         >
@@ -262,7 +230,6 @@ export default function CustomerDashboard() {
               <Button
                 variant="outline"
                 className="justify-start"
-                disabled={needsKYC}
                 onClick={() => (window.location.href = "/dashboard/deposit")}
               >
                 <PlusCircle className="mr-2 h-4 w-4" />
@@ -271,7 +238,14 @@ export default function CustomerDashboard() {
               <Button
                 variant="outline"
                 className="justify-start"
-                disabled={needsKYC}
+                onClick={() => (window.location.href = "/dashboard/transfers")}
+              >
+                <ArrowRight className="mr-2 h-4 w-4" />
+                Send Money
+              </Button>
+              <Button
+                variant="outline"
+                className="justify-start"
                 onClick={() => (window.location.href = "/dashboard/withdraw")}
               >
                 <Banknote className="mr-2 h-4 w-4" />
@@ -294,11 +268,6 @@ export default function CustomerDashboard() {
                 Manage Accounts
               </Button>
             </div>
-            {needsKYC && (
-              <p className="mt-3 text-sm text-amber-600">
-                Complete verification to access all features
-              </p>
-            )}
           </CardContent>
         </Card>
       </div>

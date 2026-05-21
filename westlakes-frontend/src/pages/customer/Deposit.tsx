@@ -26,6 +26,20 @@ import {
   Wallet,
 } from "lucide-react"
 import { toast } from "sonner"
+import KYCGate from "@/components/customer/KYCGate"
+  AlertCircle,
+  ArrowRight,
+  Search,
+  Clock,
+  XCircle,
+  CheckCheck,
+  Banknote,
+  Smartphone,
+  Globe,
+  Building2,
+  Wallet,
+} from "lucide-react"
+import { toast } from "sonner"
 
 interface Account {
   id: number
@@ -252,7 +266,8 @@ export default function Deposit() {
   const SourceIcon = selectedSource?.icon ?? Banknote
 
   return (
-    <div className="space-y-8">
+    <KYCGate>
+      <div className="space-y-8">
       <div>
         <p className="text-sm uppercase tracking-[0.28em] text-amber-500">Deposits</p>
         <h1 className="mt-3 text-3xl font-semibold text-slate-950">Add money to your account</h1>
@@ -772,5 +787,6 @@ export default function Deposit() {
         </DialogContent>
       </Dialog>
     </div>
+    </KYCGate>
   )
 }

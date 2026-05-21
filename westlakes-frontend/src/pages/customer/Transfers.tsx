@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { api } from "@/lib/api"
 import { Loader2, CheckCircle, AlertCircle, ArrowRight, Search, Clock, XCircle, CheckCheck, Globe } from "lucide-react"
 import { toast } from "sonner"
+import KYCGate from "@/components/customer/KYCGate"
 
 interface Account {
   id: number
@@ -19,6 +20,7 @@ interface Account {
   account_type: string
   balance: string
   status: string
+  user_name?: string
 }
 
 interface TransferReceipt {
@@ -140,7 +142,7 @@ export default function Transfers() {
       const results = Array.isArray(data) ? data : data.results || []
       const account = results.find((a: Account) => a.account_number === accountNumber)
       if (account) {
-        setReceiverName(account.user?.full_name || account.account_type + " Account")
+        setReceiverName(account.user_name || account.account_type + " Account")
         setIsExternal(false)
       } else {
         setReceiverName("")
@@ -216,7 +218,7 @@ export default function Transfers() {
       }
 
       if (isExternal) {
-        if (external_bank_name.trim()) payload.external_bank_name = external_bank_name.trim()
+        if (externalBankName.trim()) payload.external_bank_name = externalBankName.trim()
         if (recipientNameInput.trim()) payload.recipient_name_input = recipientNameInput.trim()
       }
 
@@ -270,10 +272,11 @@ export default function Transfers() {
   const extBankLabel = isExternal && externalBankName.trim() ? ` (${externalBankName.trim()})` : ""
 
   return (
-    <div className="space-y-8">
-      <div>
-        <p className="text-sm uppercase tracking-[0.28em] text-amber-500">Transfers</p>
-        <h1 className="mt-3 text-3xl font-semibold text-slate-950">Send money securely</h1>
+    <KYCGate>
+      <div className="space-y-8">
+        <div>
+          <p className="text-sm uppercase tracking-[0.28em] text-amber-500">Transfers</p>
+          <h1 className="mt-3 text-3xl font-semibold text-slate-950">Send money securely</h1>
         <p className="mt-4 max-w-2xl text-slate-600 leading-7">
           Transfer funds to Westlakes Bank accounts instantly, or to external bank accounts which will be processed as pending.
         </p>
@@ -770,5 +773,6 @@ export default function Transfers() {
         </DialogContent>
       </Dialog>
     </div>
+    </KYCGate>
   )
 }

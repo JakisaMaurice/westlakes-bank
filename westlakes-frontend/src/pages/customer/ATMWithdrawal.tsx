@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog"
 import { api } from "@/lib/api"
 import { Loader2, CheckCircle, AlertCircle, Banknote, CreditCard } from "lucide-react"
+import KYCGate from "@/components/customer/KYCGate"
 
 interface Account {
   id: number
@@ -141,7 +142,8 @@ export default function ATMWithdrawal() {
   const quickAmounts = [20, 50, 100, 200, 500]
 
   return (
-    <div className="space-y-8">
+    <KYCGate>
+      <div className="space-y-8">
       <div>
         <p className="text-sm uppercase tracking-[0.28em] text-amber-500">Withdrawals</p>
         <h1 className="mt-3 text-3xl font-semibold text-slate-950">ATM Withdrawal</h1>
@@ -409,5 +411,6 @@ export default function ATMWithdrawal() {
         </DialogContent>
       </Dialog>
     </div>
+    </KYCGate>
   )
 }
