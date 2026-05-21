@@ -14,25 +14,33 @@ class TransactionService:
         """
         with db_transaction.atomic():
             if transaction.transaction_type == 'TRANSFER':
-                transaction.sender_account.balance -= transaction.amount + transaction.fee
-                transaction.sender_account.save()
+                if transaction.receiver_account is None:
+                    transaction.sender_account.balance -= transaction.amount + transaction.fee
+                    transaction.sender_account.save()
+                    transaction.balance_after = transaction.sender_account.balance
+                    transaction.status = 'PENDING'
+                else:
+                    transaction.sender_account.balance -= transaction.amount + transaction.fee
+                    transaction.sender_account.save()
 
-                transaction.receiver_account.balance += transaction.amount
-                transaction.receiver_account.save()
+                    transaction.receiver_account.balance += transaction.amount
+                    transaction.receiver_account.save()
 
-                transaction.balance_after = transaction.sender_account.balance
+                    transaction.balance_after = transaction.sender_account.balance
+                    transaction.status = 'SUCCESSFUL'
 
             elif transaction.transaction_type == 'DEPOSIT':
                 transaction.receiver_account.balance += transaction.amount
                 transaction.receiver_account.save()
                 transaction.balance_after = transaction.receiver_account.balance
+                transaction.status = 'SUCCESSFUL'
 
             elif transaction.transaction_type == 'WITHDRAWAL':
                 transaction.sender_account.balance -= transaction.amount
                 transaction.sender_account.save()
                 transaction.balance_after = transaction.sender_account.balance
+                transaction.status = 'SUCCESSFUL'
 
-            transaction.status = 'SUCCESSFUL'
             transaction.save()
 
             TransactionService._create_transaction_notifications(transaction)
@@ -40,23 +48,30 @@ class TransactionService:
     @staticmethod
     def _create_transaction_notifications(transaction):
         if transaction.transaction_type == 'TRANSFER':
+            receiver_account_number = transaction.receiver_account.account_number if transaction.receiver_account else transaction.transfer_details.external_account_number
+            recipient_display = transaction.transfer_details.recipient_name or receiver_account_number
+            bank_suffix = ""
+            if transaction.transfer_details.external_bank_name:
+                bank_suffix = f" ({transaction.transfer_details.external_bank_name})"
+
             NotificationService.notify_transfer_sent(
                 user=transaction.sender_account.user,
                 amount=transaction.amount,
-                to_account=transaction.receiver_account.account_number,
+                to_account=receiver_account_number,
                 fee=str(transaction.fee),
                 balance_after=str(transaction.balance_after) if transaction.balance_after else "",
-                recipient_name=transaction.receiver_account.user.full_name,
+                recipient_name=recipient_display + bank_suffix,
                 sender_account=transaction.sender_account.account_number,
                 reference=transaction.transaction_reference,
             )
-            NotificationService.notify_transfer_received(
-                user=transaction.receiver_account.user,
-                amount=transaction.amount,
-                from_name=transaction.sender_account.user.full_name,
-                from_account=transaction.sender_account.account_number,
-                reference=transaction.transaction_reference,
-            )
+            if transaction.receiver_account is not None:
+                NotificationService.notify_transfer_received(
+                    user=transaction.receiver_account.user,
+                    amount=transaction.amount,
+                    from_name=transaction.sender_account.user.full_name,
+                    from_account=transaction.sender_account.account_number,
+                    reference=transaction.transaction_reference,
+                )
         elif transaction.transaction_type == 'DEPOSIT':
             deposit_type = "Cash Deposit"
             if transaction.deposit_type:

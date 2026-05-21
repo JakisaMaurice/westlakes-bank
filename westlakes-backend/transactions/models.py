@@ -80,6 +80,8 @@ class Transfer(models.Model):
     transaction = models.OneToOneField(Transaction, on_delete=models.CASCADE, related_name='transfer_details')
     transfer_type = models.CharField(max_length=10, choices=TRANSFER_TYPE_CHOICES, default='EXTERNAL')
     recipient_name = models.CharField(max_length=255, blank=True)
+    external_account_number = models.CharField(max_length=30, blank=True)
+    external_bank_name = models.CharField(max_length=255, blank=True)
     confirmation_pin_used = models.BooleanField(default=False)
     confirmed_at = models.DateTimeField(null=True, blank=True)
 

@@ -5,10 +5,12 @@ from accounts.models import BankAccount
 
 
 class TransactionSerializer(serializers.ModelSerializer):
-    sender_account_number = serializers.CharField(source='sender_account.account_number', read_only=True)
-    receiver_account_number = serializers.CharField(source='receiver_account.account_number', read_only=True)
+    sender_account_number = serializers.SerializerMethodField()
+    receiver_account_number = serializers.SerializerMethodField()
     sender_name = serializers.CharField(source='sender_account.user.full_name', read_only=True)
-    receiver_name = serializers.CharField(source='receiver_account.user.full_name', read_only=True)
+    receiver_name = serializers.SerializerMethodField()
+    transfer_type = serializers.SerializerMethodField()
+    external_bank_name = serializers.SerializerMethodField()
     deposit_type_display = serializers.CharField(source='get_deposit_type_display', read_only=True)
 
     class Meta:
@@ -16,21 +18,51 @@ class TransactionSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'sender_account', 'receiver_account', 'sender_account_number',
             'receiver_account_number', 'sender_name', 'receiver_name',
-            'transaction_type', 'deposit_type', 'deposit_type_display',
+            'transaction_type', 'transfer_type', 'external_bank_name',
+            'deposit_type', 'deposit_type_display',
             'amount', 'fee', 'transaction_reference',
             'status', 'timestamp', 'description', 'balance_after'
         ]
         read_only_fields = ['id', 'transaction_reference', 'timestamp', 'balance_after']
+
+    def get_sender_account_number(self, obj):
+        return obj.sender_account.account_number if obj.sender_account else None
+
+    def get_receiver_account_number(self, obj):
+        if obj.receiver_account:
+            return obj.receiver_account.account_number
+        if hasattr(obj, 'transfer_details'):
+            return obj.transfer_details.external_account_number or None
+        return None
+
+    def get_receiver_name(self, obj):
+        if obj.receiver_account:
+            return obj.receiver_account.user.full_name
+        if hasattr(obj, 'transfer_details'):
+            return obj.transfer_details.recipient_name or None
+        return None
+
+    def get_transfer_type(self, obj):
+        if hasattr(obj, 'transfer_details'):
+            return obj.transfer_details.transfer_type
+        return None
+
+    def get_external_bank_name(self, obj):
+        if hasattr(obj, 'transfer_details'):
+            return obj.transfer_details.external_bank_name or None
+        return None
 
 
 class TransactionCreateSerializer(serializers.ModelSerializer):
     receiver_account_number = serializers.CharField(write_only=True)
     transaction_pin = serializers.CharField(write_only=True, required=False)
     sender_account_id = serializers.IntegerField(write_only=True, required=False)
+    external_bank_name = serializers.CharField(write_only=False, required=False, allow_blank=True)
+    recipient_name_input = serializers.CharField(write_only=False, required=False, allow_blank=True)
 
     class Meta:
         model = Transaction
-        fields = ['sender_account_id', 'receiver_account_number', 'amount', 'description', 'transaction_pin']
+        fields = ['sender_account_id', 'receiver_account_number', 'amount', 'description', 'transaction_pin', 'external_bank_name', 'recipient_name_input']
 
     def validate(self, attrs):
         user = self.context['request'].user
@@ -48,19 +80,24 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
             except BankAccount.DoesNotExist:
                 raise serializers.ValidationError("No active account found")
 
+        receiver_account_number = attrs['receiver_account_number']
+        receiver_account = None
+        is_external = False
+
         try:
             receiver_account = BankAccount.objects.get(
-                account_number=attrs['receiver_account_number'],
+                account_number=receiver_account_number,
                 status='ACTIVE'
             )
         except BankAccount.DoesNotExist:
-            raise serializers.ValidationError("Invalid receiver account")
+            is_external = True
 
-        if sender_account.balance < amount:
-            raise serializers.ValidationError("Insufficient balance")
-
-        if sender_account == receiver_account:
+        if not is_external and sender_account == receiver_account:
             raise serializers.ValidationError("Cannot transfer to the same account")
+
+        total_debit = amount + TransactionService.calculate_fee(amount)
+        if sender_account.balance < total_debit:
+            raise serializers.ValidationError("Insufficient balance (including transfer fee)")
 
         if not user.transaction_pin:
             raise serializers.ValidationError("Please set a transaction PIN before making transfers")
@@ -73,7 +110,19 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
 
         attrs['sender_account'] = sender_account
         attrs['receiver_account'] = receiver_account
+        attrs['is_external'] = is_external
         attrs['transaction_type'] = 'TRANSFER'
+
+        if is_external:
+            ext_bank = attrs.get('external_bank_name', '')
+            recipient_input = attrs.get('recipient_name_input', '')
+            attrs['external_account_number'] = receiver_account_number
+            attrs['external_bank_name'] = ext_bank
+            attrs['recipient_name'] = recipient_input or receiver_account_number
+        else:
+            attrs['external_account_number'] = ''
+            attrs['external_bank_name'] = ''
+            attrs['recipient_name'] = receiver_account.user.full_name
 
         return attrs
 
@@ -81,6 +130,8 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
         validated_data.pop('receiver_account_number')
         validated_data.pop('transaction_pin', None)
         validated_data.pop('sender_account_id', None)
+        validated_data.pop('external_bank_name', None)
+        validated_data.pop('recipient_name_input', None)
         return super().create(validated_data)
 
 
@@ -313,7 +364,7 @@ class TransferSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Transfer
-        fields = ['id', 'transaction', 'transfer_type', 'transfer_type_display', 'recipient_name', 'confirmation_pin_used', 'confirmed_at']
+        fields = ['id', 'transaction', 'transfer_type', 'transfer_type_display', 'recipient_name', 'external_account_number', 'external_bank_name', 'confirmation_pin_used', 'confirmed_at']
 
 
 class DepositDetailSerializer(serializers.ModelSerializer):

@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.db.models import Q
+from django.utils import timezone
 from .models import Transaction
 from .serializers import TransactionSerializer, TransactionCreateSerializer, DepositSerializer, WithdrawalSerializer, AdminDepositSerializer, ATMWithdrawalSerializer
 from .services import TransactionService
@@ -71,7 +72,24 @@ class TransferView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        is_external = serializer.validated_data.get('is_external', False)
+        recipient_name = serializer.validated_data.get('recipient_name', '')
+        external_account_number = serializer.validated_data.get('external_account_number', '')
+        external_bank_name = serializer.validated_data.get('external_bank_name', '')
+
         transaction = serializer.save()
+
+        from .models import Transfer
+        Transfer.objects.create(
+            transaction=transaction,
+            transfer_type='EXTERNAL' if is_external else 'INTERNAL',
+            recipient_name=recipient_name,
+            external_account_number=external_account_number,
+            external_bank_name=external_bank_name,
+            confirmation_pin_used=True,
+            confirmed_at=timezone.now(),
+        )
 
         try:
             TransactionService.process_transaction(transaction)
