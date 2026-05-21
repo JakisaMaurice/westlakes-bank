@@ -85,18 +85,49 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
 
 
 class DepositSerializer(serializers.ModelSerializer):
+    deposit_type = serializers.ChoiceField(
+        choices=['CASH', 'BANK_TRANSFER', 'ACCOUNT_TRANSFER', 'MOBILE_MONEY', 'ONLINE_PLATFORM'],
+        default='CASH'
+    )
+    source_account_number = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    source_platform = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    source_reference = serializers.CharField(write_only=True, required=False, allow_blank=True)
+
     class Meta:
         model = Transaction
-        fields = ['amount', 'description']
+        fields = ['amount', 'description', 'deposit_type', 'source_account_number', 'source_platform', 'source_reference']
 
     def validate(self, attrs):
         user = self.context['request'].user
+        deposit_type = attrs.get('deposit_type', 'CASH')
+
         try:
             account = BankAccount.objects.get(user=user, status='ACTIVE')
             attrs['receiver_account'] = account
             attrs['transaction_type'] = 'DEPOSIT'
         except BankAccount.DoesNotExist:
             raise serializers.ValidationError("No active account found")
+
+        if attrs['amount'] <= 0:
+            raise serializers.ValidationError("Amount must be positive")
+
+        if deposit_type in ('ACCOUNT_TRANSFER', 'BANK_TRANSFER', 'MOBILE_MONEY', 'ONLINE_PLATFORM'):
+            source_ref = attrs.get('source_reference', '')
+            if not source_ref:
+                raise serializers.ValidationError(
+                    f"Source reference is required for {deposit_type.replace('_', ' ').lower()} deposits"
+                )
+
+        if deposit_type == 'MOBILE_MONEY':
+            source_platform = attrs.get('source_platform', '')
+            if not source_platform:
+                raise serializers.ValidationError("Mobile money provider name is required (e.g., M-Pesa, MTN Mobile Money)")
+
+        if deposit_type == 'ONLINE_PLATFORM':
+            source_platform = attrs.get('source_platform', '')
+            if not source_platform:
+                raise serializers.ValidationError("Platform name is required (e.g., PayPal, Stripe)")
+
         return attrs
 
     def create(self, validated_data):
@@ -241,11 +272,17 @@ class ATMWithdrawalSerializer(serializers.ModelSerializer):
 
 class AdminDepositSerializer(serializers.ModelSerializer):
     receiver_account_number = serializers.CharField(write_only=True)
-    deposit_type = serializers.ChoiceField(choices=['CASH', 'BANK_TRANSFER', 'ADJUSTMENT', 'INTEREST'], default='CASH')
+    deposit_type = serializers.ChoiceField(
+        choices=['CASH', 'BANK_TRANSFER', 'ACCOUNT_TRANSFER', 'MOBILE_MONEY', 'ONLINE_PLATFORM', 'ADJUSTMENT', 'INTEREST'],
+        default='CASH'
+    )
+    source_account_number = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    source_platform = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    source_reference = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = Transaction
-        fields = ['receiver_account_number', 'amount', 'description', 'deposit_type']
+        fields = ['receiver_account_number', 'amount', 'description', 'deposit_type', 'source_account_number', 'source_platform', 'source_reference']
 
     def validate(self, attrs):
         receiver_account_number = attrs['receiver_account_number']

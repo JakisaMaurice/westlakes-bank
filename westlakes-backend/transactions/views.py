@@ -91,6 +91,16 @@ class DepositView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         transaction = serializer.save()
 
+        from .models import Deposit
+        deposit_type = request.data.get('deposit_type', 'CASH')
+        Deposit.objects.create(
+            transaction=transaction,
+            deposit_type=deposit_type,
+            source_account_number=request.data.get('source_account_number', ''),
+            source_platform=request.data.get('source_platform', ''),
+            source_reference=request.data.get('source_reference', ''),
+        )
+
         try:
             TransactionService.process_transaction(transaction)
             return Response(TransactionSerializer(transaction).data, status=status.HTTP_201_CREATED)
@@ -108,6 +118,17 @@ class AdminDepositView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         transaction = serializer.save()
+
+        from .models import Deposit
+        deposit_type = request.data.get('deposit_type', 'CASH')
+        Deposit.objects.create(
+            transaction=transaction,
+            deposit_type=deposit_type,
+            processed_by=request.user,
+            source_account_number=request.data.get('source_account_number', ''),
+            source_platform=request.data.get('source_platform', ''),
+            source_reference=request.data.get('source_reference', ''),
+        )
 
         try:
             TransactionService.process_transaction(transaction)

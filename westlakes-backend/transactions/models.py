@@ -17,6 +17,9 @@ class Transaction(models.Model):
     DEPOSIT_TYPE_CHOICES = [
         ('CASH', 'Cash Deposit'),
         ('BANK_TRANSFER', 'Bank Transfer'),
+        ('ACCOUNT_TRANSFER', 'Account Transfer'),
+        ('MOBILE_MONEY', 'Mobile Money'),
+        ('ONLINE_PLATFORM', 'Online Platform'),
         ('ADJUSTMENT', 'Adjustment'),
         ('INTEREST', 'Interest Credit'),
     ]
@@ -31,7 +34,7 @@ class Transaction(models.Model):
     sender_account = models.ForeignKey(BankAccount, on_delete=models.CASCADE, related_name='sent_transactions', null=True, blank=True)
     receiver_account = models.ForeignKey(BankAccount, on_delete=models.CASCADE, related_name='received_transactions', null=True, blank=True)
     transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPE_CHOICES)
-    deposit_type = models.CharField(max_length=15, choices=DEPOSIT_TYPE_CHOICES, blank=True, null=True)
+    deposit_type = models.CharField(max_length=20, choices=DEPOSIT_TYPE_CHOICES, blank=True, null=True)
     amount = models.DecimalField(max_digits=15, decimal_places=2)
     fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     transaction_reference = models.CharField(max_length=50, unique=True, blank=True)
@@ -88,12 +91,18 @@ class Deposit(models.Model):
     DEPOSIT_TYPE_CHOICES = [
         ('CASH', 'Cash Deposit'),
         ('BANK_TRANSFER', 'Bank Transfer'),
+        ('ACCOUNT_TRANSFER', 'Account Transfer'),
+        ('MOBILE_MONEY', 'Mobile Money'),
+        ('ONLINE_PLATFORM', 'Online Platform'),
         ('ADJUSTMENT', 'Adjustment'),
         ('INTEREST', 'Interest Credit'),
     ]
 
     transaction = models.OneToOneField(Transaction, on_delete=models.CASCADE, related_name='deposit_details')
-    deposit_type = models.CharField(max_length=15, choices=DEPOSIT_TYPE_CHOICES, default='CASH')
+    deposit_type = models.CharField(max_length=20, choices=DEPOSIT_TYPE_CHOICES, default='CASH')
+    source_account_number = models.CharField(max_length=20, blank=True, help_text="External account number for transfers")
+    source_platform = models.CharField(max_length=100, blank=True, help_text="Platform name for mobile money / online deposits")
+    source_reference = models.CharField(max_length=100, blank=True, help_text="Reference ID from the source platform")
     processed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
