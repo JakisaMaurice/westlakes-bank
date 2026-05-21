@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { api } from "@/lib/api"
-import { Loader2, AlertCircle, CheckCircle, Clock, ArrowRight, CreditCard, Banknote, PlusCircle, ShieldCheck } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle, Clock, ArrowRight, CreditCard, Banknote, PlusCircle } from "lucide-react"
 import kycService from "@/services/kycService"
 
 interface Account {
@@ -19,7 +19,6 @@ interface Account {
 export default function CustomerDashboard() {
   const navigate = useNavigate()
   const [accounts, setAccounts] = useState<Account[]>([])
-  const [kycStatus, setKycStatus] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -31,7 +30,6 @@ export default function CustomerDashboard() {
         kycService.getMyKYC(),
       ])
       setAccounts(accountsRes.data)
-      setKycStatus(kycRes.data.status)
 
       if (kycRes.data.status !== "APPROVED") {
         navigate("/dashboard/verify", { replace: true })

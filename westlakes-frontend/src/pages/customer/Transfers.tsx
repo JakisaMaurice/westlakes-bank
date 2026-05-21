@@ -210,11 +210,13 @@ export default function Transfers() {
 
     try {
       const payload: Record<string, string | number> = {
-        sender_account_id: selectedAccount?.id,
         receiver_account_number: receiverAccount,
         amount: parseFloat(amount),
         description,
         transaction_pin: transactionPin,
+      }
+      if (selectedAccount?.id !== undefined) {
+        payload.sender_account_id = selectedAccount.id
       }
 
       if (isExternal) {
